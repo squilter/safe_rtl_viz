@@ -13,9 +13,6 @@ from mpl_toolkits.mplot3d import Axes3D
 
 import DataflashLog
 
-# FMT, 130, 35, GPS, BIBcLLeeEe, Status,Time,NSats,HDop,Lat,Lng,RelAlt,Alt,Spd,GCrs
-
-dirName = os.path.dirname(os.path.abspath(__file__))
 parser = argparse.ArgumentParser(description='Analyze an APM Dataflash log for known issues')
 parser.add_argument('logfile', type=argparse.FileType('r'), help='path to Dataflash log file (or - for stdin)')
 parser.add_argument('-f', '--format',  metavar='', type=str, action='store', choices=['bin','log','auto'], default='auto', help='log file format: \'bin\',\'log\' or \'auto\'')
@@ -27,7 +24,7 @@ if "GPS" not in logdata.channels:
     print("No GPS log data")
     sys.exit(0)
 
-### Convert from lat/lon to meters NED ###
+### Convert from lat/lon to meters ###
 wgs84 = nv.FrameE(name='WGS84')
 
 lat = logdata.channels["GPS"]["Lat"].dictData
@@ -38,9 +35,7 @@ first_index = min(lat.keys())
 
 home = wgs84.GeoPoint(latitude=lat[first_index], longitude=lon[first_index], z=alt[first_index], degrees=True)
 
-x = []
-y = []
-z = []
+x, y, z = [], [], []
 for i in lat.keys():
     position = wgs84.GeoPoint(latitude=lat[i], longitude=lon[i], z=alt[i], degrees=True)
     ned = nv.diff_positions(home, position)
