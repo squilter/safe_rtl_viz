@@ -13,6 +13,8 @@ from mpl_toolkits.mplot3d import Axes3D
 
 import DataflashLog
 
+### setup ###
+
 parser = argparse.ArgumentParser(description='Analyze an APM Dataflash log for known issues')
 parser.add_argument('logfile', type=argparse.FileType('r'), help='path to Dataflash log file (or - for stdin)')
 parser.add_argument('-f', '--format',  metavar='', type=str, action='store', choices=['bin','log','auto'], default='auto', help='log file format: \'bin\',\'log\' or \'auto\'')
