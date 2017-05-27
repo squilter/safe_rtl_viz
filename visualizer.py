@@ -27,6 +27,7 @@ if "GPS" not in logdata.channels:
     sys.exit(0)
 
 ### Convert from lat/lon to meters ###
+
 wgs84 = nv.FrameE(name='WGS84')
 
 lat = logdata.channels["GPS"]["Lat"].dictData
@@ -48,16 +49,28 @@ for i in lat.keys():
     y.append(ned[1])
     z.append(alt[i])
 
+### algorithn part ###
+
+return_path = [ (x[0],y[0],z[0]) ]
+
+def update_return_path(p):
+    x,y,z = p
+    x_old, y_old, z_old = return_path[-1]
+    # if more than 1 meter since old position
+    if (x-x_old)**2+(y-y_old)**2+(z-z_old)**2 >= 2**2: # we square the constant side, rather than taking the sqrt every time. more efficient.
+        return_path.append(p)
+
 ### animate ###
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
 def animate(i):
+    update_return_path((x[i], y[i], z[i]))
     ax.clear()
-    ax.plot_wireframe(x,y,z)
+    ax.plot_wireframe([k[0] for k in return_path], [k[1] for k in return_path], [k[2] for k in return_path], color='red')
+    ax.plot_wireframe(x,y,z) # plot whole path
     ax.scatter(x[i], y[i], z[i], c='r', marker = 'o') # render copter
-    ax.scatter(x[0], y[0], z[0], c='r', marker = 's') # render home
 
 ax.set_xlabel('X')
 ax.set_ylabel('Y')
