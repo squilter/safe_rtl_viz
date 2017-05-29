@@ -14,6 +14,11 @@ from rdp import rdp
 
 import DataflashLog
 
+### tuning variables ###
+
+position_delta = 2. # how many meters to move before appending a new position to return_path
+rdp_epsilon = 0.5 # The tuning variable used in the simplification step
+
 ### setup ###
 
 parser = argparse.ArgumentParser(description='Analyze an APM Dataflash log for known issues')
@@ -59,7 +64,7 @@ def update_return_path(p):
     x,y,z = p
     x_old, y_old, z_old = return_path[-1]
     # if more than 1 meter since old position, add it to return path
-    if (x-x_old)**2+(y-y_old)**2+(z-z_old)**2 >= 2**2: # we square the constant side, rather than taking the sqrt every time. more efficient.
+    if (x-x_old)**2+(y-y_old)**2+(z-z_old)**2 >= position_delta**2: # we square the constant side, rather than taking the sqrt every time. more efficient.
         return_path.append(p)
     else:
         # don't bother with cleanup steps if we haven't changed anything.
@@ -68,7 +73,7 @@ def update_return_path(p):
     # TODO pruning step
     
     # simplification step. Uses Ramer-Douglas-Peucker algorithm
-    return_path = rdp(return_path, epsilon = 0.5)
+    return_path = rdp(return_path, epsilon = rdp_epsilon)
 
 ### animate ###
 
