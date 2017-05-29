@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import nvector as nv
 from mpl_toolkits.mplot3d import Axes3D
+from rdp import rdp
 
 import DataflashLog
 
@@ -54,11 +55,20 @@ for i in lat.keys():
 return_path = [ (x[0],y[0],z[0]) ]
 
 def update_return_path(p):
+    global return_path
     x,y,z = p
     x_old, y_old, z_old = return_path[-1]
-    # if more than 1 meter since old position
+    # if more than 1 meter since old position, add it to return path
     if (x-x_old)**2+(y-y_old)**2+(z-z_old)**2 >= 2**2: # we square the constant side, rather than taking the sqrt every time. more efficient.
         return_path.append(p)
+    else:
+        # don't bother with cleanup steps if we haven't changed anything.
+        return
+
+    # TODO pruning step
+    
+    # simplification step. Uses Ramer-Douglas-Peucker algorithm
+    return_path = rdp(return_path, epsilon = 0.5)
 
 ### animate ###
 
@@ -68,7 +78,8 @@ ax = fig.add_subplot(111, projection='3d')
 def animate(i):
     update_return_path((x[i], y[i], z[i]))
     ax.clear()
-    ax.plot_wireframe([k[0] for k in return_path], [k[1] for k in return_path], [k[2] for k in return_path], color='red')
+    # comment out lines below to choose what to render
+    ax.plot_wireframe([k[0] for k in return_path], [k[1] for k in return_path], [k[2] for k in return_path], color='red') # plot calculated return path
     ax.plot_wireframe(x,y,z) # plot whole path
     ax.scatter(x[i], y[i], z[i], c='r', marker = 'o') # render copter
 
