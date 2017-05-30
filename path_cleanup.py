@@ -10,7 +10,8 @@ def dot_product(u, v):
     return u[0]*v[0] + u[1]*v[1] + u[2]*v[2]
 
 '''
-    Returns the closest distance between two line segments in 3D space.
+    Returns the closest distance between two line segments in 3D space, 
+    and returns the halfway point between along the shortest line segment between the given input line segments.
     The first line segment runs from point p1 to p2, the second through p3 and p4.
 '''
 def segment_segment_dist(p1, p2, p3, p4):
@@ -33,20 +34,24 @@ def segment_segment_dist(p1, p2, p3, p4):
     t1, t2 = 0,0 # the parameter for the position on line1 and line2 which define the closest points.
 
     if(D < 0.0000001): # almost parallel. This avoid division by 0.
-        # t1 remains 0
-        t2 = d/b if b>c else e/c
+        p1p3 = sqrt((x3-x1)**2+(y3-y1)**2+(z3-z1)**2), ( (x3-x1)/2, (y3-y1)/2, (z3-z1)/2 ) 
+        p1p4 = sqrt((x4-x1)**2+(y4-y1)**2+(z4-z1)**2), ( (x4-x1)/2, (y4-y1)/2, (z4-z1)/2 ) 
+        p2p3 = sqrt((x3-x2)**2+(y3-y2)**2+(z3-z2)**2), ( (x3-x2)/2, (y3-y2)/2, (z3-z2)/2 ) 
+        p2p4 = sqrt((x4-x2)**2+(y4-y2)**2+(z4-z2)**2), ( (x4-x2)/2, (y4-y2)/2, (z4-z2)/2 ) 
+        return min([p1p3, p1p4, p2p3, p2p4], key=lambda p: p[0])
     else:
         t1 = (b*e-c*d)/D
         t2 = (a*e - b*d)/D
 
-    # Is the closest point on the line bounded by the 2 sides of the segment?
-    t1 = min(max(0,t1),1)
-    t2 = min(max(0,t2),1)
+        # restrict both parameters between 0 and 1.
+        t1 = min(max(0,t1),1)
+        t2 = min(max(0,t2),1)
 
-    # difference between two closest points
-    dP = (w[0]+t1*u[0]-t2*v[0], w[1]+t1*u[1]-t2*v[1], w[2]+t1*u[2]-t2*v[2])
+        # difference between two closest points
+        dP = (w[0]+t1*u[0]-t2*v[0], w[1]+t1*u[1]-t2*v[1], w[2]+t1*u[2]-t2*v[2])
+        halfway_point = ( (x1+t1*u[0]+x3+t2*v[0])/2, (y1+t1*u[1] + y3+t2*v[1])/2, (z1+t1*u[2]+z3+t2*v[2])/2)
 
-    return sqrt(dot_product(dP, dP))
+        return sqrt(dot_product(dP, dP)), halfway_point
 
 '''
     Takes a path and runs 2 cleanup steps: pruning, then simplification.
@@ -72,7 +77,9 @@ def segment_segment_dist(p1, p2, p3, p4):
 '''
 def cleanup(path, pos_delta, rdp_eps):
     # pruning step
-    
+    for i in range(len(path)):
+        for j in range(i+1, len(path)):
+            pass
 
     # simplification step. Uses Ramer-Douglas-Peucker algorithm
     path = rdp(path, epsilon = rdp_eps)
@@ -85,41 +92,41 @@ class TestLineCalculations(unittest.TestCase):
         p2 = (1,0,0)
         p3 = (0,0,1)
         p4 = (0,1,1)
-        self.assertEqual(1, segment_segment_dist(p1,p2,p3,p4))
-
+        self.assertEqual((1,(0,0,0.5)), segment_segment_dist(p1,p2,p3,p4))
+    
     def test_parallel(self):
         p1 = (0,0,0)
         p2 = (1,1,0)
         p3 = (0,0,1)
         p4 = (1,1,1)
-        self.assertEqual(1, segment_segment_dist(p1,p2,p3,p4))
-
+        self.assertEqual((1, (0.0, 0.0, 0.5)), segment_segment_dist(p1,p2,p3,p4))
+    
     def test_intersecting(self):
         p1 = (0,0,0)
         p2 = (1,0,0)
         p3 = (0,0,0)
         p4 = (0,1,0)
-        self.assertEqual(0, segment_segment_dist(p1,p2,p3,p4))
-
+        self.assertEqual((0,(0,0,0)), segment_segment_dist(p1,p2,p3,p4))
+    
     def test_identical(self):
         p1 = (0,0,0)
         p2 = (1,1,0)
-        self.assertEqual(0, segment_segment_dist(p1,p2,p1,p2))
-        self.assertEqual(0, segment_segment_dist(p1,p2,p2,p1))
+        self.assertEqual((0,(0,0,0)), segment_segment_dist(p1,p2,p1,p2))
+        self.assertEqual((0,(0,0,0)), segment_segment_dist(p1,p2,p2,p1))
 
     def test_parallel_but_spaced_out(self):
         p1 = (0,0,0)
         p2 = (1,0,0)
         p3 = (3,0,0)
         p4 = (4,0,0)
-        self.assertEqual(3, segment_segment_dist(p1,p2,p3,p4))
+        self.assertEqual((2, (1.0, 0.0, 0.0)), segment_segment_dist(p1,p2,p3,p4))
 
     def test_perpendicular_but_spaced_out(self):
         p1 = (-2,0,0)
         p2 = (2,0,0)
         p3 = (0,1,1)
         p4 = (0,2,2)
-        self.assertEqual(sqrt(2), segment_segment_dist(p1,p2,p3,p4))
+        self.assertEqual((sqrt(2), (0,0.5,0.5)), segment_segment_dist(p1,p2,p3,p4))
 
 if __name__ == "__main__":
     unittest.main()
