@@ -51,3 +51,34 @@ def cleanup(path, rdp_eps):
     path = rdp(path, epsilon = rdp_eps)
 
     return path
+
+class TestLineCalculations(unittest.TestCase):
+    def test_perpendicular(self):
+        p1 = (0,0,0)
+        p2 = (1,0,0)
+        p3 = (0,0,1)
+        p4 = (0,1,1)
+        self.assertEqual(1, line_line_dist(p1,p2,p3,p4))
+
+    def test_parallel(self):
+        p1 = (0,0,0)
+        p2 = (1,1,0)
+        p3 = (0,0,1)
+        p4 = (1,1,1)
+        self.assertEqual(1, line_line_dist(p1,p2,p3,p4))
+
+    def test_intersecting(self):
+        p1 = (0,0,0)
+        p2 = (1,0,0)
+        p3 = (0,0,0)
+        p4 = (0,1,0)
+        self.assertEqual(0, line_line_dist(p1,p2,p3,p4))
+
+    def test_identical(self):
+        p1 = (0,0,0)
+        p2 = (1,1,0)
+        self.assertEqual(0, line_line_dist(p1,p2,p1,p2))
+        self.assertEqual(0, line_line_dist(p1,p2,p2,p1))
+
+if __name__ == "__main__":
+    unittest.main()
