@@ -72,7 +72,8 @@ def update_return_path(p):
         return
 
     if len(return_path) >= cleanup_length: #TODO maybe it makes more sense to run the cleanup more often, but record which comparisons have already been made (so each cleanup is quicker)
-        return_path = path_cleanup.cleanup(return_path, rdp_eps=rdp_epsilon)
+        #TODO what happens if the cleanup fails and we are at risk of running out of memory? Maybe try again with more aggresive parameters, but we cannot waste too much time.
+        return_path = path_cleanup.cleanup(return_path,pos_delta=position_delta, rdp_eps=rdp_epsilon)
 
 ### animate ###
 

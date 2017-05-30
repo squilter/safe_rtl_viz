@@ -10,7 +10,7 @@ def dot_product(u, v):
     return u[0]*v[0] + u[1]*v[1] + u[2]*v[2]
 
 '''
-    returns the closest distance between two line segments in 3D space.
+    Returns the closest distance between two line segments in 3D space.
     The first line segment runs from point p1 to p2, the second through p3 and p4.
 '''
 def segment_segment_dist(p1, p2, p3, p4):
@@ -48,9 +48,31 @@ def segment_segment_dist(p1, p2, p3, p4):
 
     return sqrt(dot_product(dP, dP))
 
+'''
+    Takes a path and runs 2 cleanup steps: pruning, then simplification.
 
-def cleanup(path, rdp_eps):
-    # TODO pruning step
+    The pruning step defines line segments from point 1 to 2, point 2 to 3, ...
+    Then it compares (almost) all line segments to see how close they got, in 3D space.
+    If they got close enough, defined by the parameter 'position_delta', all path points
+    between those two line segments are deleted, and replaced by a single point halfway between
+    where the two previous line segments were closest.
+
+    This algorithm will never compare two consecutive line segments. Obviously
+    the segments (p1,p2) and (p2,p3) will get very close (they touch), but there would be nothing to trim between them.
+
+    If the deletion is triggered, the pruning step is complete. Since certain line segments are now gone,
+    it does not make sense to keep comparing using those (potentially deleted) line segments. The goal of this algorithm
+    is not to find the optimal simplified path, but rather to simplify it enough that it is not at risk of running out of memory.
+
+    The simplification step uses the Ramer-Douglas-Peucker algorithm. See Wikipedia for description.
+
+    TODO optimization ideas:
+        - record which line segments have been compared before. The next time the algorithm is run, those won't be compared again.
+        - when pruning, is it better to start comparisons from the back or front of the path?
+'''
+def cleanup(path, pos_delta, rdp_eps):
+    # pruning step
+    
 
     # simplification step. Uses Ramer-Douglas-Peucker algorithm
     path = rdp(path, epsilon = rdp_eps)
