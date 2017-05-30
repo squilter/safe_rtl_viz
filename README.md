@@ -14,8 +14,8 @@ How the current version works: (TODO not implemented yet!)
     - check if the path overlaps (or almost overlaps) with itself (pruning step)
         - if so, slice out any points between those.
             - TODO how the heck to do this?
-                - if two points are close to each other, that's easy. But can we do better than O(n!) ?
+                - if two points are close to each other, that's easy.
                 - If the path A->B (almost) intersects C->D (but none are close to each other), remove everything between A and D. But how do we detect this?
     - If a point B lies between points A and C, remove B (simplification step)
-        - TODO try out the Ramer–Douglas–Peucker algorithm
+        - uses the Ramer–Douglas–Peucker algorithm
 - When RTL is triggered, run the cleanup algorithm once more, and then fly the path back home.

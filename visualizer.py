@@ -10,14 +10,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import nvector as nv
 from mpl_toolkits.mplot3d import Axes3D
-from rdp import rdp
 
 import DataflashLog
+import path_cleanup
 
 ### tuning variables ###
 
 position_delta = 2. # how many meters to move before appending a new position to return_path
 rdp_epsilon = 0.5 # The tuning variable used in the simplification step
+cleanup_length = 15 # The number of points stored in memory that triggers the cleanup method
 
 ### setup ###
 
@@ -70,10 +71,8 @@ def update_return_path(p):
         # don't bother with cleanup steps if we haven't changed anything.
         return
 
-    # TODO pruning step
-    
-    # simplification step. Uses Ramer-Douglas-Peucker algorithm
-    return_path = rdp(return_path, epsilon = rdp_epsilon)
+    if len(return_path) >= cleanup_length: #TODO maybe it makes more sense to run the cleanup more often, but record which comparisons have already been made (so each cleanup is quicker)
+        return_path = path_cleanup.cleanup(return_path, rdp_eps=rdp_epsilon)
 
 ### animate ###
 
