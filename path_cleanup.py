@@ -80,11 +80,13 @@ def segment_segment_dist(p1, p2, p3, p4):
 '''
 def cleanup(path, pos_delta, rdp_eps):
     # pruning step
+    pruning_occured = False
     for i in range(1, len(path)-1):
         for j in range(i+2, len(path)-1):
             dist = segment_segment_dist(path[i], path[i+1], path[j], path[j+1])
             if dist[0] <= pos_delta:
                 path = path[:i] + [dist[1]] + path[j+1:]
+                pruning_occured = True
                 break
         else: # break out of both for loops
             continue
@@ -93,7 +95,7 @@ def cleanup(path, pos_delta, rdp_eps):
     # simplification step. Uses Ramer-Douglas-Peucker algorithm
     path = rdp(path, epsilon = rdp_eps)
 
-    return path
+    return path, pruning_occured
 
 class TestLineCalculations(unittest.TestCase):
     def test_perpendicular(self):
