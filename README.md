@@ -2,7 +2,7 @@
 
 This repository is the first steps towards my 2017 GSoC project, "Safe Return-to-Launch for ArduPilot". The python script, `visualizer.py`, takes a standard .log file and animates the copter flying, and the result of the Safe-RTL algorithm. To test it out, run:
 
-`.\visualizer.py robert_lefebvre_octo_PM.log`
+`./visualizer.py ./logs/robert_lefebvre_octo_PM.log`
 
 How the current version works: (TODO not implemented yet!)
 

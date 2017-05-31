@@ -56,7 +56,7 @@ for i in lat.keys():
     y.append(ned[1])
     z.append(alt[i])
 
-### algorithn part ###
+### algorithm part ###
 
 return_path = [ (x[0],y[0],z[0]) ]
 
