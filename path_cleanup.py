@@ -74,12 +74,21 @@ def segment_segment_dist(p1, p2, p3, p4):
     TODO optimization ideas:
         - record which line segments have been compared before. The next time the algorithm is run, those won't be compared again.
         - when pruning, is it better to start comparisons from the back or front of the path?
+        - cleanup should return whether or not pruning step did something. If it did not, we know that this is the "optimal" path. If it did,
+            running cleanup again might improve the path. If our goal was to save memory, we can ignore this return value, but if we wanted to
+            do the final cleanup before flying the path back home, we might want to run cleanup multiple times until pruning does nothing.
 '''
 def cleanup(path, pos_delta, rdp_eps):
     # pruning step
-    for i in range(len(path)):
-        for j in range(i+1, len(path)):
-            pass
+    for i in range(1, len(path)-1):
+        for j in range(i+2, len(path)-1):
+            dist = segment_segment_dist(path[i], path[i+1], path[j], path[j+1])
+            if dist[0] <= pos_delta:
+                path = path[:i] + [dist[1]] + path[j+1:]
+                break
+        else: # break out of both for loops
+            continue
+        break
 
     # simplification step. Uses Ramer-Douglas-Peucker algorithm
     path = rdp(path, epsilon = rdp_eps)
