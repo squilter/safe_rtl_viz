@@ -4,6 +4,7 @@ import argparse
 import math
 import os
 import sys
+import time
 
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
@@ -28,9 +29,6 @@ parser.add_argument('-f', '--format',  metavar='', type=str, action='store', cho
 parser.add_argument('-s', '--skip_bad', metavar='', action='store_const', const=True, help='skip over corrupt dataflash lines')
 args = parser.parse_args()
 logdata = DataflashLog.DataflashLog(args.logfile.name, format=args.format, ignoreBadlines=args.skip_bad) # read log
-
-for s in logdata.channels:
-    print(s)
 
 if "GPS" not in logdata.channels:
     print("No GPS log data")
@@ -93,7 +91,11 @@ fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
 def animate(i):
-    update_return_path((x[i], y[i], z[i]))
+    try:
+        update_return_path((x[i], y[i], z[i]))
+    except IndexError:
+        time.sleep(3)
+        sys.exit(0)
     ax.clear()
     # comment out lines below to choose what to render
     ax.plot_wireframe([k[0] for k in return_path], [k[1] for k in return_path], [k[2] for k in return_path], color='red') # plot calculated return path
