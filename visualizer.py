@@ -29,6 +29,9 @@ parser.add_argument('-s', '--skip_bad', metavar='', action='store_const', const=
 args = parser.parse_args()
 logdata = DataflashLog.DataflashLog(args.logfile.name, format=args.format, ignoreBadlines=args.skip_bad) # read log
 
+for s in logdata.channels:
+    print(s)
+
 if "GPS" not in logdata.channels:
     print("No GPS log data")
     sys.exit(0)
@@ -39,7 +42,14 @@ wgs84 = nv.FrameE(name='WGS84')
 
 lat = logdata.channels["GPS"]["Lat"].dictData
 lon = logdata.channels["GPS"]["Lng"].dictData
-alt = logdata.channels["GPS"]["RelAlt"].dictData
+alt = []
+if "RelAlt" in logdata.channels["GPS"]:
+    alt = logdata.channels["GPS"]["RelAlt"].dictData
+elif "Alt" in logdata.channels["GPS"]:
+    alt = logdata.channels["GPS"]["Alt"].dictData
+else:
+    print("No GPS log data")
+    sys.exit(0)
 
 first_index = min(lat.keys())
 

@@ -4,6 +4,8 @@ This repository is the first steps towards my 2017 GSoC project, "Safe Return-to
 
 `./visualizer.py ./logs/robert_lefebvre_octo_PM.log`
 
+To try it out with new log files, find a .bin file and use mission planner to convert the .bin file to a .log file (there's a button for that).
+
 How the current version works:
 
 - create an array that represents the path that we will fly to get back home. (TODO prevent length from increasing beyond 20!)
