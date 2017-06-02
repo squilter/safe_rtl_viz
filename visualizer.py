@@ -67,9 +67,13 @@ for i in lat.keys():
 ### algorithm part ###
 
 return_path = [ (x[0],y[0],z[0]) ]
+worst_length = 1
 
 def update_return_path(p):
-    global return_path
+    global return_path, worst_length
+    if len(return_path) > worst_length:
+        worst_length = len(return_path)
+        print("Worst length:" + str(worst_length))
     x,y,z = p
     x_old, y_old, z_old = return_path[-1]
     # if more than 1 meter since old position, add it to return path
