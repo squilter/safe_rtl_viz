@@ -83,8 +83,7 @@ def update_return_path(p):
         # don't bother with cleanup steps if we haven't changed anything.
         return
 
-    if len(return_path) >= cleanup_length: #TODO maybe it makes more sense to run the cleanup more often, but record which comparisons have already been made (so each cleanup is quicker)
-        #TODO what happens if the cleanup fails and we are at risk of running out of memory? Maybe try again with more aggresive parameters, but we cannot waste too much time.
+    if len(return_path) >= cleanup_length:
         pruning_occured = True
         while pruning_occured:
             return_path, pruning_occured = path_cleanup.cleanup(return_path,pos_delta=position_delta, rdp_eps=rdp_epsilon)

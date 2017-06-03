@@ -8,7 +8,7 @@ To try it out with new log files, find a .bin file and use mission planner to co
 
 How the current version works:
 
-- create an array that represents the path that we will fly to get back home. (TODO prevent length from increasing beyond 20!)
+- create an array that represents the path that we will fly to get back home.
 - the first item in this array should be the home position
 - Every time a new position comes in, check if our current position is more than two meters from the last item in the array
     - if it is, append the current position to the array

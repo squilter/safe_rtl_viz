@@ -10,7 +10,7 @@ def dot_product(u, v):
     return u[0]*v[0] + u[1]*v[1] + u[2]*v[2]
 
 '''
-    Returns the closest distance between two line segments in 3D space, 
+    Returns the closest distance between two line segments in 3D space,
     and returns the halfway point between along the shortest line segment between the given input line segments.
     The first line segment runs from point p1 to p2, the second through p3 and p4.
 '''
@@ -34,10 +34,10 @@ def segment_segment_dist(p1, p2, p3, p4):
     t1, t2 = 0,0 # the parameter for the position on line1 and line2 which define the closest points.
 
     if(D < 0.0000001): # almost parallel. This avoid division by 0.
-        p1p3 = sqrt((x3-x1)**2+(y3-y1)**2+(z3-z1)**2), ( (x3-x1)/2, (y3-y1)/2, (z3-z1)/2 ) 
-        p1p4 = sqrt((x4-x1)**2+(y4-y1)**2+(z4-z1)**2), ( (x4-x1)/2, (y4-y1)/2, (z4-z1)/2 ) 
-        p2p3 = sqrt((x3-x2)**2+(y3-y2)**2+(z3-z2)**2), ( (x3-x2)/2, (y3-y2)/2, (z3-z2)/2 ) 
-        p2p4 = sqrt((x4-x2)**2+(y4-y2)**2+(z4-z2)**2), ( (x4-x2)/2, (y4-y2)/2, (z4-z2)/2 ) 
+        p1p3 = sqrt((x3-x1)**2+(y3-y1)**2+(z3-z1)**2), ( (x3-x1)/2, (y3-y1)/2, (z3-z1)/2 )
+        p1p4 = sqrt((x4-x1)**2+(y4-y1)**2+(z4-z1)**2), ( (x4-x1)/2, (y4-y1)/2, (z4-z1)/2 )
+        p2p3 = sqrt((x3-x2)**2+(y3-y2)**2+(z3-z2)**2), ( (x3-x2)/2, (y3-y2)/2, (z3-z2)/2 )
+        p2p4 = sqrt((x4-x2)**2+(y4-y2)**2+(z4-z2)**2), ( (x4-x2)/2, (y4-y2)/2, (z4-z2)/2 )
         return min([p1p3, p1p4, p2p3, p2p4], key=lambda p: p[0])
     else:
         t1 = (b*e-c*d)/D
@@ -74,9 +74,7 @@ def segment_segment_dist(p1, p2, p3, p4):
     TODO optimization ideas:
         - record which line segments have been compared before. The next time the algorithm is run, those won't be compared again.
         - when pruning, is it better to start comparisons from the back or front of the path?
-        - cleanup should return whether or not pruning step did something. If it did not, we know that this is the "optimal" path. If it did,
-            running cleanup again might improve the path. If our goal was to save memory, we can ignore this return value, but if we wanted to
-            do the final cleanup before flying the path back home, we might want to run cleanup multiple times until pruning does nothing.
+        - If our return path is too long, maybe use a more aggressive cleanup. What happens if it cannot be cleaned up more?
 '''
 def cleanup(path, pos_delta, rdp_eps):
     # pruning step
@@ -104,21 +102,21 @@ class TestLineCalculations(unittest.TestCase):
         p3 = (0,0,1)
         p4 = (0,1,1)
         self.assertEqual((1,(0,0,0.5)), segment_segment_dist(p1,p2,p3,p4))
-    
+
     def test_parallel(self):
         p1 = (0,0,0)
         p2 = (1,1,0)
         p3 = (0,0,1)
         p4 = (1,1,1)
         self.assertEqual((1, (0.0, 0.0, 0.5)), segment_segment_dist(p1,p2,p3,p4))
-    
+
     def test_intersecting(self):
         p1 = (0,0,0)
         p2 = (1,0,0)
         p3 = (0,0,0)
         p4 = (0,1,0)
         self.assertEqual((0,(0,0,0)), segment_segment_dist(p1,p2,p3,p4))
-    
+
     def test_identical(self):
         p1 = (0,0,0)
         p2 = (1,1,0)
