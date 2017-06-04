@@ -83,7 +83,7 @@ def cleanup(path, pos_delta, rdp_eps):
         for j in range(i+2, len(path)-1):
             dist = segment_segment_dist(path[i], path[i+1], path[j], path[j+1])
             if dist[0] <= pos_delta:
-                path = path[:i] + [dist[1]] + path[j+1:]
+                path = path[:i+1] + [dist[1]] + path[j+1:]
                 pruning_occured = True
                 break
         else: # break out of both for loops
