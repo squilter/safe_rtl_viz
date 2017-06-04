@@ -73,7 +73,6 @@ def update_return_path(p):
     global return_path, worst_length
     if len(return_path) > worst_length:
         worst_length = len(return_path)
-        print("Worst length:" + str(worst_length))
     x,y,z = p
     x_old, y_old, z_old = return_path[-1]
     # if more than 1 meter since old position, add it to return path
@@ -97,6 +96,7 @@ def animate(i):
     try:
         update_return_path((x[i], y[i], z[i]))
     except IndexError:
+        print("Worst Length: " + str(worst_length))
         time.sleep(3)
         sys.exit(0)
     ax.clear()
