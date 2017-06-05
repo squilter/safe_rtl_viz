@@ -14,12 +14,13 @@ from mpl_toolkits.mplot3d import Axes3D
 
 import DataflashLog
 import path_cleanup
+from path_cleanup import Path
 
 ### tuning variables ###
 
 position_delta = 2. # how many meters to move before appending a new position to return_path
-rdp_epsilon = 0.5 # The tuning variable used in the simplification step
-cleanup_length = 15 # The number of points stored in memory that triggers the cleanup method
+rdp_epsilon = position_delta * math.sin(15) # The tuning variable used in the simplification step. This means that if we go in a straight line but then adjust course less than 15 degrees, the path will simplify to one straight line after cleanup.
+cleanup_length = 2 # The number of points stored in memory that triggers the cleanup method
 
 ### setup ###
 
@@ -66,15 +67,12 @@ for i in lat.keys():
 
 ### algorithm part ###
 
-return_path = [ (x[0],y[0],z[0]) ]
-worst_length = 1
+return_path = Path( [ (x[0],y[0],z[0]) ] )
 
 def update_return_path(p):
-    global return_path, worst_length
-    if len(return_path) > worst_length:
-        worst_length = len(return_path)
+    global return_path
     x,y,z = p
-    x_old, y_old, z_old = return_path[-1]
+    x_old, y_old, z_old = return_path.get(-1)
     # if more than $position_delta meters since old position, add it to return path
     if (x-x_old)**2+(y-y_old)**2+(z-z_old)**2 >= position_delta**2: # we square the constant side, rather than taking the sqrt every time. more efficient.
         return_path.append(p)
@@ -82,10 +80,7 @@ def update_return_path(p):
         # don't bother with cleanup steps if we haven't changed anything.
         return
 
-    if len(return_path) >= cleanup_length:
-        pruning_occured = True
-        while pruning_occured:
-            return_path, pruning_occured = path_cleanup.cleanup(return_path,pos_delta=position_delta, rdp_eps=rdp_epsilon)
+    return_path.cleanup(pos_delta=position_delta, rdp_eps = rdp_epsilon, cln_len = cleanup_length)
 
 ### animate ###
 
@@ -96,12 +91,11 @@ def animate(i):
     try:
         update_return_path((x[i], y[i], z[i]))
     except IndexError:
-        print("Worst Length: " + str(worst_length))
         time.sleep(3)
         sys.exit(0)
     ax.clear()
     # comment out lines below to choose what to render
-    ax.plot_wireframe([k[0] for k in return_path], [k[1] for k in return_path], [k[2] for k in return_path], color='red') # plot calculated return path
+    ax.plot_wireframe([k[0] for k in return_path.path], [k[1] for k in return_path.path], [k[2] for k in return_path.path], color='red') # plot calculated return path
     ax.plot_wireframe(x,y,z) # plot whole path
     ax.scatter(x[i], y[i], z[i], c='r', marker = 'o') # render copter
 

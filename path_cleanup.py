@@ -71,29 +71,44 @@ def segment_segment_dist(p1, p2, p3, p4):
 
     The simplification step uses the Ramer-Douglas-Peucker algorithm. See Wikipedia for description.
 
+    clean_pos tells us the position up to which the path has already been cleaned. There's no point in doing any simplification/pruning
+    among the first few points which have already been simplified and pruned.
+
     TODO optimization ideas:
-        - record which line segments have been compared before. The next time the algorithm is run, those won't be compared again.
         - when pruning, is it better to start comparisons from the back or front of the path?
         - If our return path is too long, maybe use a more aggressive cleanup. What happens if it cannot be cleaned up more?
+
 '''
-def cleanup(path, pos_delta, rdp_eps):
-    # pruning step
-    pruning_occured = False
-    for i in range(1, len(path)-1):
-        for j in range(i+2, len(path)-1):
-            dist = segment_segment_dist(path[i], path[i+1], path[j], path[j+1])
-            if dist[0] <= pos_delta:
-                path = path[:i+1] + [dist[1]] + path[j+1:]
-                pruning_occured = True
-                break
-        else: # break out of both for loops
-            continue
-        break
+class Path:
+    def __init__(self, path):
+        self.path = path
 
-    # simplification step. Uses Ramer-Douglas-Peucker algorithm
-    path = rdp(path, epsilon = rdp_eps)
+    def append(self, p):
+        self.path.append(p)
 
-    return path, pruning_occured
+    def get(self, i):
+        return self.path[i]
+
+    def cleanup(self, pos_delta, rdp_eps, cln_len):
+        # if the path is short, don't bother
+        if len(self.path) < cln_len:
+            return
+
+        # pruning step
+        pruning_occured = False
+        for i in range(1, len(self.path)-1):
+            for j in range(i+2, len(self.path)-1):
+                dist = segment_segment_dist(self.path[i], self.path[i+1], self.path[j], self.path[j+1])
+                if dist[0] <= pos_delta:
+                    self.path = self.path[:i+1] + [dist[1]] + self.path[j+1:]
+                    pruning_occured = True
+                    break
+            else: # break out of both for loops
+                continue
+            break
+
+        # simplification step. Uses Ramer-Douglas-Peucker algorithm
+        self.path = rdp(self.path, epsilon = rdp_eps)
 
 class TestLineCalculations(unittest.TestCase):
     def test_perpendicular(self):
