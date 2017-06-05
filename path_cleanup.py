@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 
 import unittest
-from math import sqrt
+from math import sqrt, sin
 
 from rdp import rdp
 
+### tuning variables ###
+
+position_delta = 2. # how many meters to move before appending a new position to return_path
+rdp_epsilon = position_delta * 1/4
+cleanup_length = 2 # The number of points stored in memory that triggers the cleanup method
 
 def dot_product(u, v):
     return u[0]*v[0] + u[1]*v[1] + u[2]*v[2]
@@ -83,15 +88,18 @@ class Path:
     def __init__(self, path):
         self.path = path
 
-    def append(self, p):
-        self.path.append(p)
+    def append_if_far_enough(self, p):
+        x,y,z = p
+        x_old, y_old, z_old = self.path[-1]
+        if (x-x_old)**2+(y-y_old)**2+(z-z_old)**2 >= position_delta**2:
+            self.path.append(p)
 
     def get(self, i):
         return self.path[i]
 
-    def cleanup(self, pos_delta, rdp_eps, cln_len):
+    def cleanup(self):
         # if the path is short, don't bother
-        if len(self.path) < cln_len:
+        if len(self.path) < cleanup_length:
             return
 
         # pruning step
@@ -99,7 +107,7 @@ class Path:
         for i in range(1, len(self.path)-1):
             for j in range(i+2, len(self.path)-1):
                 dist = segment_segment_dist(self.path[i], self.path[i+1], self.path[j], self.path[j+1])
-                if dist[0] <= pos_delta:
+                if dist[0] <= position_delta:
                     self.path = self.path[:i+1] + [dist[1]] + self.path[j+1:]
                     pruning_occured = True
                     break
@@ -108,7 +116,7 @@ class Path:
             break
 
         # simplification step. Uses Ramer-Douglas-Peucker algorithm
-        self.path = rdp(self.path, epsilon = rdp_eps)
+        self.path = rdp(self.path, epsilon = rdp_epsilon)
 
 class TestLineCalculations(unittest.TestCase):
     def test_perpendicular(self):

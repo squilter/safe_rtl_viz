@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import math
 import os
 import sys
 import time
@@ -15,12 +14,6 @@ from mpl_toolkits.mplot3d import Axes3D
 import DataflashLog
 import path_cleanup
 from path_cleanup import Path
-
-### tuning variables ###
-
-position_delta = 2. # how many meters to move before appending a new position to return_path
-rdp_epsilon = position_delta * math.sin(15) # The tuning variable used in the simplification step. This means that if we go in a straight line but then adjust course less than 15 degrees, the path will simplify to one straight line after cleanup.
-cleanup_length = 2 # The number of points stored in memory that triggers the cleanup method
 
 ### setup ###
 
@@ -65,31 +58,17 @@ for i in lat.keys():
     y.append(ned[1])
     z.append(alt[i])
 
-### algorithm part ###
+    ### animate ###
 
 return_path = Path( [ (x[0],y[0],z[0]) ] )
-
-def update_return_path(p):
-    global return_path
-    x,y,z = p
-    x_old, y_old, z_old = return_path.get(-1)
-    # if more than $position_delta meters since old position, add it to return path
-    if (x-x_old)**2+(y-y_old)**2+(z-z_old)**2 >= position_delta**2: # we square the constant side, rather than taking the sqrt every time. more efficient.
-        return_path.append(p)
-    else:
-        # don't bother with cleanup steps if we haven't changed anything.
-        return
-
-    return_path.cleanup(pos_delta=position_delta, rdp_eps = rdp_epsilon, cln_len = cleanup_length)
-
-### animate ###
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
 def animate(i):
     try:
-        update_return_path((x[i], y[i], z[i]))
+        return_path.append_if_far_enough( (x[i], y[i], z[i]) )
+        return_path.cleanup()
     except IndexError:
         time.sleep(3)
         sys.exit(0)
