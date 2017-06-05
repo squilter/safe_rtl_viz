@@ -39,6 +39,7 @@ def segment_segment_dist(p1, p2, p3, p4):
     t1, t2 = 0,0 # the parameter for the position on line1 and line2 which define the closest points.
 
     if(D < 0.0000001): # almost parallel. This avoid division by 0.
+        # TODO what about two parallel lines which are closer than 2 meters apart, but where 1 is much longer than the other?
         p1p3 = sqrt((x3-x1)**2+(y3-y1)**2+(z3-z1)**2), ( (x3-x1)/2, (y3-y1)/2, (z3-z1)/2 )
         p1p4 = sqrt((x4-x1)**2+(y4-y1)**2+(z4-z1)**2), ( (x4-x1)/2, (y4-y1)/2, (z4-z1)/2 )
         p2p3 = sqrt((x3-x2)**2+(y3-y2)**2+(z3-z2)**2), ( (x3-x2)/2, (y3-y2)/2, (z3-z2)/2 )
@@ -80,8 +81,9 @@ def segment_segment_dist(p1, p2, p3, p4):
     among the first few points which have already been simplified and pruned.
 
     TODO optimization ideas:
-        - when pruning, is it better to start comparisons from the back or front of the path?
-        - If our return path is too long, maybe use a more aggressive cleanup. What happens if it cannot be cleaned up more?
+        - implement clean_pos which records where we have cleaned up to. Also implement all optimizations that go with it
+        - implement a cut-off that stops the path from growing any more. Max 50 points, then throw an exception if it can't be cleaned up more.
+        - If our return path is too long, maybe use a more aggressive cleanup.
 
 '''
 class Path:

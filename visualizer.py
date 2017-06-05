@@ -58,7 +58,7 @@ for i in lat.keys():
     y.append(ned[1])
     z.append(alt[i])
 
-    ### animate ###
+### animate ###
 
 return_path = Path( [ (x[0],y[0],z[0]) ] )
 
