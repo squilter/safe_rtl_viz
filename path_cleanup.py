@@ -79,17 +79,17 @@ def segment_segment_dist(p1, p2, p3, p4):
     clean_pos tells us the position up to which the path has already been cleaned. There's no point in doing any simplification/pruning
     among the first few points which have already been simplified and pruned.
 
-    TODO optimization ideas:
-        - implement clean_pos which records where we have cleaned up to. Also implement all optimizations that go with it
-            - RDP algorithm (defined recursively) will return immediately if both points are before clean_pos
-            - pruning algorithm will not compare any 2 lines before clean_pos. The second for-loop should start at clean_pos
-        - implement a cut-off that stops the path from growing any more. Max 50 points, then throw an exception if it can't be cleaned up more.
-        - If our return path is too long, maybe use a more aggressive cleanup.
+    TODO rewrite RDP manually. Return immediately if both points are before clean_pos.
+
+    TODO implement a cut-off that stops the path from growing any more. Max 50 points, then throw an exception if it can't be cleaned up more.
+
+    TODO If our return path is too long, maybe use a more aggressive cleanup.
 
 '''
 class Path:
     def __init__(self, path):
         self.path = path
+        self.clean_pos = 0
 
     def append_if_far_enough(self, p):
         x,y,z = p
@@ -108,11 +108,12 @@ class Path:
         # pruning step
         pruning_occured = False
         for i in range(1, len(self.path)-1):
-            for j in range(i+2, len(self.path)-1):
+            for j in range(max(self.clean_pos,i)+2, len(self.path)-1):
                 dist = segment_segment_dist(self.path[i], self.path[i+1], self.path[j], self.path[j+1])
                 if dist[0] <= position_delta:
                     self.path = self.path[:i+1] + [dist[1]] + self.path[j+1:]
                     pruning_occured = True
+                    self.clean_pos = min(self.clean_pos, i)
                     break
             else: # break out of both for loops
                 continue
@@ -120,6 +121,7 @@ class Path:
 
         # simplification step. Uses Ramer-Douglas-Peucker algorithm
         self.path = rdp(self.path, epsilon = rdp_epsilon)
+        self.clean_pos = len(self.path)-1
 
 class TestLineCalculations(unittest.TestCase):
     def test_perpendicular(self):
