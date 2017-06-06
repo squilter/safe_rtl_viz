@@ -3,8 +3,6 @@
 import unittest
 from math import sqrt, sin
 
-from rdp import rdp
-
 ### tuning variables ###
 
 position_delta = 2. # how many meters to move before appending a new position to return_path
@@ -77,6 +75,26 @@ def point_line_dist(point, line):
     area = sqrt(s*(s-a)*(s-b)*(s-c))
 
     return 2*area/b
+
+# TODO redo this iteratively, not recursively, then ignore any 2 points before clean_pos for simplification
+def rdp(path, epsilon):
+    max_index = -1
+    max_dist = 0
+    end = len(path)-1
+
+    for i in range(1, end-1):
+        dist = point_line_dist( path[i], (path[0],path[end]) )
+        if dist > max_dist:
+            max_index = i
+            max_dist = dist
+    if max_dist > epsilon:
+        l1 = rdp(path[:max_index+1], epsilon)
+        l2 = rdp(path[max_index:], epsilon)
+        path = l1[:-1] + l2
+    else:
+        path = [path[0], path[-1]]
+    return path
+
 '''
     Takes a path and runs 2 cleanup steps: pruning, then simplification.
 
@@ -97,10 +115,6 @@ def point_line_dist(point, line):
 
     clean_pos tells us the position up to which the path has already been cleaned. There's no point in doing any simplification/pruning
     among the first few points which have already been simplified and pruned.
-
-    TODO rewrite RDP manually. Return immediately if both points are before clean_pos.
-
-    TODO implement a cut-off that stops the path from growing any more. Max 50 points, then throw an exception if it can't be cleaned up more.
 
 '''
 class Path:
