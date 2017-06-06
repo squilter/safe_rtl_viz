@@ -9,7 +9,8 @@ from rdp import rdp
 
 position_delta = 2. # how many meters to move before appending a new position to return_path
 rdp_epsilon = position_delta * 1/4
-cleanup_length = 2 # The number of points stored in memory that triggers the cleanup method
+cleanup_length = 10 # The number of points stored in memory that triggers the cleanup method
+max_path_len = 50
 
 def dot_product(u, v):
     return u[0]*v[0] + u[1]*v[1] + u[2]*v[2]
@@ -92,6 +93,9 @@ class Path:
         self.clean_pos = 0
 
     def append_if_far_enough(self, p):
+        if len(self.path) >= 50:
+            raise Exception("Out of Memory. Safe RTL unavailabe.")
+
         x,y,z = p
         x_old, y_old, z_old = self.path[-1]
         if (x-x_old)**2+(y-y_old)**2+(z-z_old)**2 >= position_delta**2:
