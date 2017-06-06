@@ -15,6 +15,9 @@ max_path_len = 50
 def dot_product(u, v):
     return u[0]*v[0] + u[1]*v[1] + u[2]*v[2]
 
+def hypot3(p1, p2):
+    return sqrt( (p1[0]-p2[0])**2 + (p1[1]-p2[1])**2 + (p1[2]-p2[2])**2 )
+
 '''
     Returns the closest distance between two line segments in 3D space,
     and returns the halfway point between along the shortest line segment between the given input line segments.
@@ -60,6 +63,21 @@ def segment_segment_dist(p1, p2, p3, p4):
         return sqrt(dot_product(dP, dP)), halfway_point
 
 '''
+    Returns the closest distance from a point to a 3D line. The line is defined by any 2 points
+    see https://stackoverflow.com/questions/1616050/minimum-perpendicular-distance-of-a-point-to-a-line-in-3d-plane-algorithm
+'''
+def point_line_dist(point, line):
+    # triangle side lengths
+    a = hypot3(point,line[0])
+    b = hypot3(line[0],line[1])
+    c = hypot3(line[1],point)
+
+    s = (a+b+c)/2. # semiperimeter of triangle
+
+    area = sqrt(s*(s-a)*(s-b)*(s-c))
+
+    return 2*area/b
+'''
     Takes a path and runs 2 cleanup steps: pruning, then simplification.
 
     The pruning step defines line segments from point 1 to 2, point 2 to 3, ...
@@ -83,8 +101,6 @@ def segment_segment_dist(p1, p2, p3, p4):
     TODO rewrite RDP manually. Return immediately if both points are before clean_pos.
 
     TODO implement a cut-off that stops the path from growing any more. Max 50 points, then throw an exception if it can't be cleaned up more.
-
-    TODO If our return path is too long, maybe use a more aggressive cleanup.
 
 '''
 class Path:
@@ -122,6 +138,7 @@ class Path:
             else: # break out of both for loops
                 continue
             break
+
 
         # simplification step. Uses Ramer-Douglas-Peucker algorithm
         self.path = rdp(self.path, epsilon = rdp_epsilon)
@@ -168,6 +185,16 @@ class TestLineCalculations(unittest.TestCase):
         p3 = (0,1,1)
         p4 = (0,2,2)
         self.assertEqual((sqrt(2), (0,0.5,0.5)), segment_segment_dist(p1,p2,p3,p4))
+
+    def test_line_point(self):
+        p = (0,0,1)
+        l = ((1,1,0),(-1,-1,0))
+        self.assertAlmostEqual(1., point_line_dist(p,l))
+
+    def test_line_point2(self):
+        p = (-3,9,7)
+        l = ((0,9,2),(5,9,8))
+        self.assertAlmostEqual(5.5056, point_line_dist(p,l), delta=0.001)
 
 if __name__ == "__main__":
     unittest.main()
