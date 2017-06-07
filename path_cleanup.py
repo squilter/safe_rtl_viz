@@ -80,10 +80,9 @@ def point_line_dist(point, line):
 def rdp(path, epsilon):
     max_index = -1
     max_dist = 0
-    end = len(path)-1
 
-    for i in range(1, end-1):
-        dist = point_line_dist( path[i], (path[0],path[end]) )
+    for i in range(1, len(path)-1):
+        dist = point_line_dist( path[i], (path[0],path[-1]) )
         if dist > max_dist:
             max_index = i
             max_dist = dist
@@ -135,7 +134,7 @@ class Path:
         return self.path[i]
 
     def cleanup(self):
-        # if the path is short, don't bother
+        # if the path is short, don't bother. TODO improve this
         if len(self.path) < cleanup_length:
             return
 
