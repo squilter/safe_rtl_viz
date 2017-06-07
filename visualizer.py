@@ -70,6 +70,7 @@ def animate(i):
         return_path.append_if_far_enough( (x[i], y[i], z[i]) )
         return_path.cleanup()
     except IndexError:
+        print("Worst Length: " + str(return_path.worst_length))
         time.sleep(3)
         sys.exit(0)
     ax.clear()

@@ -120,10 +120,14 @@ class Path:
     def __init__(self, path):
         self.path = path
         self.clean_pos = 0
+        self.worst_length = 0
 
     def append_if_far_enough(self, p):
         if len(self.path) >= 50:
-            raise Exception("Out of Memory. Safe RTL unavailabe.")
+            raise Exception("Out of Memory. Safe RTL unavailabe.") # TODO make this algorithm more aggressive at cleaning up
+
+        if len(self.path) > self.worst_length:
+            self.worst_length = len(self.path)
 
         x,y,z = p
         x_old, y_old, z_old = self.path[-1]
