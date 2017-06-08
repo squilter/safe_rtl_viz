@@ -77,6 +77,7 @@ def animate(i):
     # comment out lines below to choose what to render
     ax.plot_wireframe([k[0] for k in return_path.path], [k[1] for k in return_path.path], [k[2] for k in return_path.path], color='red') # plot calculated return path
     ax.plot_wireframe(x,y,z) # plot whole path
+    # TODO render path in memory as well as current return path
     ax.scatter(x[i], y[i], z[i], c='r', marker = 'o') # render copter
 
 ax.set_xlabel('X')

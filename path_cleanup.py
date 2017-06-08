@@ -7,7 +7,7 @@ from math import sqrt, sin
 
 position_delta = 2. # how many meters to move before appending a new position to return_path
 rdp_epsilon = position_delta * 1/4
-cleanup_length = 10 # The number of points stored in memory that triggers the cleanup method
+cleanup_length = 8 # The number of points stored in memory that triggers the cleanup method
 max_path_len = 50
 
 def dot_product(u, v):
@@ -138,8 +138,8 @@ class Path:
         return self.path[i]
 
     def cleanup(self):
-        # if the path is short, don't bother. TODO improve this
-        if len(self.path) < cleanup_length:
+        # don't bother running the cleanup if the path has not grown more than $cleanup_length since the last time a cleanup was run
+        if len(self.path)-self.clean_pos < cleanup_length:
             return
 
         # pruning step
