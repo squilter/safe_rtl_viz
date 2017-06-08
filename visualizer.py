@@ -68,20 +68,25 @@ ax = fig.add_subplot(111, projection='3d')
 def animate(i):
     try:
         return_path.append_if_far_enough( (x[i], y[i], z[i]) )
-        return_path.cleanup()
+        return_path.routine_cleanup()
     except IndexError:
         print("Worst Length: " + str(return_path.worst_length))
         time.sleep(3)
         sys.exit(0)
     ax.clear()
-    # comment out lines below to choose what to render
-    ax.plot_wireframe([k[0] for k in return_path.path], [k[1] for k in return_path.path], [k[2] for k in return_path.path], color='red') # plot calculated return path
-    ax.plot_wireframe(x,y,z) # plot whole path
-    # TODO render path in memory as well as current return path
-    ax.scatter(x[i], y[i], z[i], c='r', marker = 'o') # render copter
+
+    ## plot hypothetical return path
+    flyback_path = return_path.get_flyback_path()
+    ax.plot_wireframe([k[0] for k in flyback_path], [k[1] for k in flyback_path], [k[2] for k in flyback_path], color='red')
+    ## plot path in memory
+    ax.plot_wireframe([k[0] for k in return_path.path], [k[1] for k in return_path.path], [k[2] for k in return_path.path], color='red')
+    ## plot whole path
+    ax.plot_wireframe(x,y,z)
+    ## render copter
+    ax.scatter(x[i], y[i], z[i], c='r', marker = 'o')
 
 ax.set_xlabel('X')
 ax.set_ylabel('Y')
 ax.set_zlabel('alt')
-ani = animation.FuncAnimation(fig, animate, interval=100)
+ani = animation.FuncAnimation(fig, animate, interval=10)
 plt.show()

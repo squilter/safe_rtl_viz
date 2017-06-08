@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
+import copy
 import unittest
-from math import sqrt, sin
+from math import sin, sqrt
 
 ### tuning variables ###
 
@@ -137,15 +138,37 @@ class Path:
     def get(self, i):
         return self.path[i]
 
-    def cleanup(self):
+    '''
+        Call this method regularly to clean up the path in memory.
+    '''
+    def routine_cleanup(self):
         # don't bother running the cleanup if the path has not grown more than $cleanup_length since the last time a cleanup was run
         if len(self.path)-self.clean_pos < cleanup_length:
             return
+        self.__cleanup()
 
+    '''
+        Hypothetically, if the copter were to fly back now, what path would it fly? This runs an aggressive cleanup and returns a path,
+        but it does not alter the path in memory.
+    '''
+    def get_flyback_path(self):
+        return self.path
+        # TODO redo this. it's crappy any it doesn't even work properly:
+        tmp = copy.deepcopy(self.path)
+
+        # run cleanup until it returns without having done any pruning
+        while self.__cleanup():
+            pass
+
+        return copy.deepcopy(self.path)
+        self.path = tmp # reset original path
+
+
+    def __cleanup(self):
         # pruning step
         pruning_occured = False
         for i in range(1, len(self.path)-1):
-            for j in range(max(self.clean_pos,i)+2, len(self.path)-1):
+            for j in range(max(self.clean_pos,i)+2, len(self.path)-1): # TODO this inner loop should count backwards, so that we can eliminate bigger loops before smaller ones.
                 dist = segment_segment_dist(self.path[i], self.path[i+1], self.path[j], self.path[j+1])
                 if dist[0] <= position_delta:
                     self.path = self.path[:i+1] + [dist[1]] + self.path[j+1:]
@@ -156,10 +179,11 @@ class Path:
                 continue
             break
 
-
         # simplification step. Uses Ramer-Douglas-Peucker algorithm
         self.path = rdp(self.path, epsilon = rdp_epsilon)
         self.clean_pos = len(self.path)-1
+
+        return pruning_occured
 
 class TestLineCalculations(unittest.TestCase):
     def test_perpendicular(self):
