@@ -171,7 +171,7 @@ class Path:
         # pruning step
         pruning_occured = False
         for i in range(1, len(self.path)-1):
-            for j in range(max(self.clean_pos,i)+2, len(self.path)-1): # TODO this inner loop should count backwards, so that we can eliminate bigger loops before smaller ones.
+            for j in range(len(self.path)-2, max(self.clean_pos,i)+1,-1):
                 dist = segment_segment_dist(self.path[i], self.path[i+1], self.path[j], self.path[j+1])
                 if dist[0] <= position_delta:
                     self.path = self.path[:i+1] + [dist[1]] + self.path[j+1:]
