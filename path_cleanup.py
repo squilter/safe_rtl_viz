@@ -73,7 +73,7 @@ def point_line_dist(point, line):
 
     s = (a+b+c)/2. # semiperimeter of triangle
 
-    area = sqrt(s*(s-a)*(s-b)*(s-c))
+    area = sqrt(max(0,s*(s-a)*(s-b)*(s-c))) # inner part must be constrained above 0 because a triangle where all 3 points could be on a line. float rounding could push this under 0.
 
     return 2*area/b
 
