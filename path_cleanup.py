@@ -7,8 +7,8 @@ from math import sin, sqrt
 ### tuning variables ###
 
 position_delta = 2. # how many meters to move before appending a new position to return_path
+pruning_delta = position_delta * 1.5 # how many meters apart must two points be, such that we can assume there is no obstacle between those points
 rdp_epsilon = position_delta * 1/4
-cleanup_length = 8 # The number of points stored in memory that triggers the cleanup method
 max_path_len = 50
 
 def dot_product(u, v):
@@ -77,7 +77,6 @@ def point_line_dist(point, line):
 
     return 2*area/b
 
-# TODO redo this iteratively, not recursively, then ignore any 2 points before clean_pos for simplification
 def rdp(path, epsilon):
     max_index = -1
     max_dist = 0
@@ -112,21 +111,13 @@ def rdp(path, epsilon):
     is not to find the optimal simplified path, but rather to simplify it enough that it is not at risk of running out of memory.
 
     The simplification step uses the Ramer-Douglas-Peucker algorithm. See Wikipedia for description.
-
-    clean_pos tells us the position up to which the path has already been cleaned. There's no point in doing any simplification/pruning
-    among the first few points which have already been simplified and pruned.
-
 '''
 class Path:
     def __init__(self, path):
         self.path = path
-        self.clean_pos = 0
         self.worst_length = 0
 
     def append_if_far_enough(self, p):
-        if len(self.path) >= 50:
-            raise Exception("Out of Memory. Safe RTL unavailabe.") # TODO make this algorithm more aggressive at cleaning up
-
         if len(self.path) > self.worst_length:
             self.worst_length = len(self.path)
 
@@ -142,11 +133,13 @@ class Path:
         Call this method regularly to clean up the path in memory.
     '''
     def routine_cleanup(self):
-        # don't bother running the cleanup if the path has not grown more than $cleanup_length since the last time a cleanup was run
-        # TODO maybe try pruning only once memory is filling up, but simplify regularly. The extra loops might be useful later on to prune better.
-        if len(self.path)-self.clean_pos < cleanup_length:
-            return
-        self.__cleanup()
+        # We only do a routine cleanup if the memory is almost full. Cleanup deletes potentially useful points,
+        # so it would be bad to clean up if we don't have to
+        if len(self.path) > max_path_len - 2:
+            self.__cleanup()
+            # if the cleanup was ineffective. TODO maybe try a more aggressive cleanup this time around. Or maybe just to RDP the first time, then prune the second time.
+            if len(self.path) > max_path_len - 2:
+                raise Exception("Out of Memory. Safe RTL unavailabe.")
 
     '''
         Hypothetically, if the copter were to fly back now, what path would it fly? This runs an aggressive cleanup and returns a path,
@@ -154,7 +147,6 @@ class Path:
     '''
     def get_flyback_path(self):
         tmp = copy.deepcopy(self.path)
-        tmp2 = self.clean_pos
 
         # run cleanup until it returns without having done any pruning
         while self.__cleanup():
@@ -163,7 +155,6 @@ class Path:
         ret = copy.deepcopy(self.path)
         # reset to original state
         self.path = tmp
-        self.clean_pos = tmp2
 
         return ret
 
@@ -171,12 +162,11 @@ class Path:
         # pruning step
         pruning_occured = False
         for i in range(1, len(self.path)-1):
-            for j in range(len(self.path)-2, max(self.clean_pos,i)+1,-1):
+            for j in range(len(self.path)-2, i+1,-1):
                 dist = segment_segment_dist(self.path[i], self.path[i+1], self.path[j], self.path[j+1])
-                if dist[0] <= position_delta:
+                if dist[0] <= pruning_delta:
                     self.path = self.path[:i+1] + [dist[1]] + self.path[j+1:]
                     pruning_occured = True
-                    self.clean_pos = min(self.clean_pos, i)
                     break
             else: # break out of both for loops
                 continue
@@ -184,7 +174,6 @@ class Path:
 
         # simplification step. Uses Ramer-Douglas-Peucker algorithm
         self.path = rdp(self.path, epsilon = rdp_epsilon)
-        self.clean_pos = len(self.path)-1
 
         return pruning_occured
 

@@ -76,7 +76,7 @@ def animate(i):
     ax.clear()
 
     ## plot flown whole path
-    ax.plot_wireframe(x,y,z)
+    # ax.plot_wireframe(x,y,z)
     ## plot return path currently in memory
     ax.plot_wireframe([k[0] for k in return_path.path], [k[1] for k in return_path.path], [k[2] for k in return_path.path], color='green')
     ## plot hypothetical return path if RTL activated now
