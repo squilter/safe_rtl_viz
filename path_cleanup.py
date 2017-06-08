@@ -143,6 +143,7 @@ class Path:
     '''
     def routine_cleanup(self):
         # don't bother running the cleanup if the path has not grown more than $cleanup_length since the last time a cleanup was run
+        # TODO maybe try pruning only once memory is filling up, but simplify regularly. The extra loops might be useful later on to prune better.
         if len(self.path)-self.clean_pos < cleanup_length:
             return
         self.__cleanup()
@@ -152,17 +153,19 @@ class Path:
         but it does not alter the path in memory.
     '''
     def get_flyback_path(self):
-        return self.path
-        # TODO redo this. it's crappy any it doesn't even work properly:
         tmp = copy.deepcopy(self.path)
+        tmp2 = self.clean_pos
 
         # run cleanup until it returns without having done any pruning
         while self.__cleanup():
             pass
 
-        return copy.deepcopy(self.path)
-        self.path = tmp # reset original path
+        ret = copy.deepcopy(self.path)
+        # reset to original state
+        self.path = tmp
+        self.clean_pos = tmp2
 
+        return ret
 
     def __cleanup(self):
         # pruning step

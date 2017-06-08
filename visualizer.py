@@ -75,13 +75,13 @@ def animate(i):
         sys.exit(0)
     ax.clear()
 
-    ## plot hypothetical return path
+    ## plot flown whole path
+    ax.plot_wireframe(x,y,z)
+    ## plot return path currently in memory
+    ax.plot_wireframe([k[0] for k in return_path.path], [k[1] for k in return_path.path], [k[2] for k in return_path.path], color='green')
+    ## plot hypothetical return path if RTL activated now
     flyback_path = return_path.get_flyback_path()
     ax.plot_wireframe([k[0] for k in flyback_path], [k[1] for k in flyback_path], [k[2] for k in flyback_path], color='red')
-    ## plot path in memory
-    ax.plot_wireframe([k[0] for k in return_path.path], [k[1] for k in return_path.path], [k[2] for k in return_path.path], color='red')
-    ## plot whole path
-    ax.plot_wireframe(x,y,z)
     ## render copter
     ax.scatter(x[i], y[i], z[i], c='r', marker = 'o')
 
