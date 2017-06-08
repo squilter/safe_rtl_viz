@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
 
 import argparse
-import os
 import sys
-import time
 
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
-import numpy as np
 import nvector as nv
 from mpl_toolkits.mplot3d import Axes3D
 
 import DataflashLog
-import path_cleanup
 from path_cleanup import Path
 
 ### setup ###
@@ -71,7 +67,6 @@ def animate(i):
         return_path.routine_cleanup()
     except IndexError:
         print("Worst Length: " + str(return_path.worst_length))
-        time.sleep(3)
         sys.exit(0)
     ax.clear()
 
