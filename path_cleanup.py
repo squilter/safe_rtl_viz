@@ -8,8 +8,8 @@ from math import sin, sqrt
 
 position_delta = 2. # how many meters to move before appending a new position to return_path
 pruning_delta = position_delta * 1.5 # how many meters apart must two points be, such that we can assume there is no obstacle between those points
-rdp_epsilon = position_delta * 1/4
-max_path_len = 50
+rdp_epsilon = position_delta * 1/2
+max_path_len = 100
 
 def dot_product(u, v):
     return u[0]*v[0] + u[1]*v[1] + u[2]*v[2]
@@ -137,7 +137,10 @@ class Path:
         # so it would be bad to clean up if we don't have to
         if len(self.path) > max_path_len - 2:
             self.__cleanup()
-            # if the cleanup was ineffective. TODO maybe try a more aggressive cleanup this time around. Or maybe just to RDP the first time, then prune the second time.
+            # if the cleanup was ineffective.
+            # TODO maybe try a more aggressive cleanup this time around:
+            # - maybe just to RDP the first time, then prune the second time.
+            # - maybe run the current cleanup, but it pruned less than 10 points (and reports that this cleanup was optimal), increase tuning parameter aggressiveness
             if len(self.path) > max_path_len - 2:
                 raise Exception("Out of Memory. Safe RTL unavailabe.")
 
@@ -162,7 +165,9 @@ class Path:
         # pruning step
         pruning_occured = False
         for i in range(1, len(self.path)-1):
-            for j in range(len(self.path)-2, i+1,-1):
+            # TODO what is best: prune big/small loops starting in front/back?
+            # for j in range(i+2, len(self.path)-1): # count forwards. This prunes old, small loops first.
+            for j in range(len(self.path)-2, i+1,-1): # counts backwards. This prunes old, big loops first.
                 dist = segment_segment_dist(self.path[i], self.path[i+1], self.path[j], self.path[j+1])
                 if dist[0] <= pruning_delta:
                     self.path = self.path[:i+1] + [dist[1]] + self.path[j+1:]
