@@ -42,14 +42,10 @@ def segment_segment_dist(p1, p2, p3, p4):
     t1, t2 = 0,0 # the parameter for the position on line1 and line2 which define the closest points.
 
     if(D < 0.0000001): # almost parallel. This avoid division by 0.
-        p1p3 = sqrt((x3-x1)**2+(y3-y1)**2+(z3-z1)**2), ( (x3-x1)/2, (y3-y1)/2, (z3-z1)/2 )
-        p1p4 = sqrt((x4-x1)**2+(y4-y1)**2+(z4-z1)**2), ( (x4-x1)/2, (y4-y1)/2, (z4-z1)/2 )
-        p2p3 = sqrt((x3-x2)**2+(y3-y2)**2+(z3-z2)**2), ( (x3-x2)/2, (y3-y2)/2, (z3-z2)/2 )
-        p2p4 = sqrt((x4-x2)**2+(y4-y2)**2+(z4-z2)**2), ( (x4-x2)/2, (y4-y2)/2, (z4-z2)/2 )
-        return min([p1p3, p1p4, p2p3, p2p4], key=lambda p: p[0])
+        return float("inf")
     else:
         t1 = (b*e-c*d)/D
-        t2 = (a*e - b*d)/D
+        t2 = (a*e-b*d)/D
 
         # restrict both parameters between 0 and 1.
         t1 = min(max(0,t1),1)
