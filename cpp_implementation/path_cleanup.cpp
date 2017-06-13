@@ -21,8 +21,6 @@ struct dist_point
   float distance;
   Vector3f point;
 };
-dist_point d_p = {1, 2.0};
-Vector3f(1.0f, 2.0f, 3.0f)
 
 /**
 *  Returns the closest distance in 3D space between any part of two input segments, defined from p1 to p2 and from p3 to p4.
@@ -47,7 +45,7 @@ dist_point segment_segment_dist(Vector3f p1, Vector3f p2, Vector3f p3, Vector3f 
   float t2 = 0f;
 
   if ( (a*c)-(b*b) < SMALL_FLOAT){ // almost parallel. This avoids division by 0.
-    return FLT_MAX;
+    return {FLT_MAX, Vector3f(0, 0, 0)};
   } else{
     t1 = (b*e-c*d)/(a*c-b*b);
     t2 = (a*e-b*d)/(a*c-b*b);
@@ -63,3 +61,22 @@ dist_point segment_segment_dist(Vector3f p1, Vector3f p2, Vector3f p3, Vector3f 
     return {dP.length(), halfway_point}
   }
 }
+
+/**
+*  Returns the closest distance from a point to a 3D line. The line is defined by any 2 points
+*  see https://stackoverflow.com/questions/1616050/minimum-perpendicular-distance-of-a-point-to-a-line-in-3d-plane-algorithm
+*/
+float point_line_dist(Vector3f point, Vector3f line1, Vector3f line2){
+  // triangle side lengths
+  float a = HYPOT(point, line1)
+  float b = HYPOT(line1, line2)
+  float c = HYPOT(line2, point)
+
+  // semiperimeter of triangle
+  float s = (a+b+c)/2f
+
+  area = sqrt(max(0f,s*(s-a)*(s-b)*(s-c))) //inner part must be constrained above 0 because a triangle where all 3 points could be on a line. float rounding could push this under 0.
+  return 2*area/b
+}
+
+// TODO implement RDP. Probably best to write an iterative version, not recursive. That way, simplification can be performed in-place.
