@@ -57,16 +57,18 @@ for i in lat.keys():
 ### animate ###
 
 return_path = Path( [ (x[0],y[0],z[0]) ] )
+path_len = []
+counter = 10 # only render memory usage every 10 frames
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
+mem_ax = fig.add_subplot(5,2,10)
 
 def animate(i):
     try:
         return_path.append_if_far_enough( (x[i], y[i], z[i]) )
         return_path.routine_cleanup()
     except IndexError:
-        print("Worst Length: " + str(return_path.worst_length))
         sys.exit(0)
     ax.clear()
 
@@ -79,6 +81,14 @@ def animate(i):
     ax.plot_wireframe([k[0] for k in flyback_path], [k[1] for k in flyback_path], [k[2] for k in flyback_path], color='red')
     ## render copter
     ax.scatter(x[i], y[i], z[i], c='r', marker = 'o')
+    ## render memory usage
+    global counter
+    counter = counter+1
+    if counter > 10:
+        counter = 0
+        path_len.append(len(return_path.path))
+        mem_ax.clear()
+        mem_ax.plot(path_len)
 
 ax.set_xlabel('X')
 ax.set_ylabel('Y')
