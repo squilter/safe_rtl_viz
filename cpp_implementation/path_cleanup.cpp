@@ -82,6 +82,7 @@ float point_line_dist(Vector3f point, Vector3f line1, Vector3f line2){
 void rdp(Vector3f *path, int last_index, float epsilon);
 
 class Path {
+    // points are stored in meters from EKF origin. TODO NED or XYZ?
     Vector3f path [MAX_PATH_LEN]; // TODO would a linked list be more appropriate? Definitely would be easier to prune points out.
     int last_index, worst_length;
   public:

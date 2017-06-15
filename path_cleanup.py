@@ -121,6 +121,7 @@ class Path:
         x_old, y_old, z_old = self.path[-1]
         if (x-x_old)**2+(y-y_old)**2+(z-z_old)**2 >= position_delta**2:
             self.path.append(p)
+        # TODO maybe just move the most recent point if it was gonna make it in the same place anyways.
 
     def get(self, i):
         return self.path[i]
@@ -132,13 +133,13 @@ class Path:
         # We only do a routine cleanup if the memory is almost full. Cleanup deletes potentially useful points,
         # so it would be bad to clean up if we don't have to
         if len(self.path) > max_path_len - 2:
-            self.__cleanup()
-            # if the cleanup was ineffective.
-            # TODO maybe try a more aggressive cleanup this time around:
-            # - maybe just to RDP the first time, then prune the second time.
-            # - maybe run the current cleanup, but it pruned less than 10 points (and reports that this cleanup was optimal), increase tuning parameter aggressiveness
+            self.__cleanup_simplification()
+            # if that didn't do anything, try pruning
             if len(self.path) > max_path_len - 2:
-                raise Exception("Out of Memory. Safe RTL unavailabe.")
+                self.__cleanup_pruning()
+                # if it still didn't work
+                if len(self.path) > max_path_len - 2:
+                    raise Exception("Out of Memory. Safe RTL unavailabe.")
 
     '''
         Hypothetically, if the copter were to fly back now, what path would it fly? This runs an aggressive cleanup and returns a path,
@@ -148,8 +149,8 @@ class Path:
         tmp = copy.deepcopy(self.path)
 
         # run cleanup until it returns without having done any pruning
-        while self.__cleanup():
-            pass
+        while self.__cleanup_pruning():
+            self.__cleanup_simplification()
 
         ret = copy.deepcopy(self.path)
         # reset to original state
@@ -157,11 +158,10 @@ class Path:
 
         return ret
 
-    def __cleanup(self):
-        # pruning step
+    def __cleanup_pruning(self):
         pruning_occured = False
         for i in range(1, len(self.path)-1):
-            # TODO what is best: prune big/small loops starting in front/back?
+            # here we can choose: prune big/small loops starting in front/back?
             # for j in range(i+2, len(self.path)-1): # count forwards. This prunes old, small loops first.
             for j in range(len(self.path)-2, i+1,-1): # counts backwards. This prunes old, big loops first.
                 dist = segment_segment_dist(self.path[i], self.path[i+1], self.path[j], self.path[j+1])
@@ -172,11 +172,10 @@ class Path:
             else: # break out of both for loops
                 continue
             break
-
-        # simplification step. Uses Ramer-Douglas-Peucker algorithm
-        self.path = rdp(self.path, epsilon = rdp_epsilon)
-
         return pruning_occured
+
+    def __cleanup_simplification(self):
+        self.path = rdp(self.path, epsilon = rdp_epsilon)
 
 class TestLineCalculations(unittest.TestCase):
     def test_perpendicular(self):
