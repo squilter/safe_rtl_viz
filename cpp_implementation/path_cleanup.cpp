@@ -152,6 +152,7 @@ bool Path::cleanup(){
       distance_point dp = segment_segment_dist(path[i], path[i+1], path[j], path[j+1]);
       if ( dp->distance <= PRUNING_DELTA){
         // TODO prune path. Not ideal with an array. Looks like this in python: self.path = self.path[:i+1] + [dist[1]] + self.path[j+1:]
+        // probably do this with memset or maybe std::move
         pruning_occured = True;
         goto simplification_step; // best way I could think of to break out of nested loops. sorry.
       }

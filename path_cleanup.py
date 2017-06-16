@@ -4,6 +4,8 @@ import copy
 import unittest
 from math import sin, sqrt
 
+from bitarray import bitarray
+
 ### tuning variables ###
 
 position_delta = 2. # how many meters to move before appending a new position to return_path
@@ -89,6 +91,36 @@ def rdp(path, epsilon):
     else:
         path = [path[0], path[-1]]
     return path
+
+def rdp_iter(path, epsilon, start = 0, end = None):
+    if end is None:
+        end = len(path)-1
+    stk = []
+    stk.append( (start, end) )
+    global_start_index = start
+    bit_array = bitarray([True]*(end-start+1))
+    while(stk):
+        start, end = stk.pop()
+        max_dist = 0.
+        index = start
+        for i in range(index+1, end):
+            if bit_array[i-global_start_index]:
+                dist = point_line_dist(path[i], (path[start], path[end]))
+                if dist > max_dist:
+                    index = i
+                    max_dist = dist
+        if max_dist > epsilon:
+            stk.append( (start, index) )
+            stk.append( (index, end) )
+        else:
+            for i in range(start+1, end):
+                bit_array[i - global_start_index] = False
+
+    ret = []
+    for i,b in enumerate(bit_array):
+        if b:
+            ret.append(path[global_start_index+i])
+    return ret
 
 '''
     Takes a path and runs 2 cleanup steps: pruning, then simplification.
