@@ -3,12 +3,17 @@
 *  I just needed a place to dump the random methods.
 */
 
+#include <bitset>
+
 #define SMALL_FLOAT  0.0000001
 
 #define POSITION_DELTA 2f // how many meters to move before appending a new position to return_path
 #define PRUNING_DELTA (POSITION_DELTA * 1.5) //h ow many meteres apart must two points be, such that we can assume that there is no obstacle between those points
 #define RDP_EPSILON (POSITION_DELTA * 0.5)
-#define MAX_PATH_LEN 100 // the amount of memory used by safe RTL will be slightly higher than 3*8*MAX_PATH_LEN bytes. Increasing this number will improve path pruning, but will use more memory, and running a path cleanup will take longer.
+#define MAX_PATH_LEN 100 // the amount of memory used by safe RTL will be slightly higher than 3*8*MAX_PATH_LEN bytes. Increasing this number will improve path pruning, but will use more memory, and running a path cleanup will take longer. No longer than 255.
+#define RDP_STACK_LEN 64 // the amount of memory to be allocated for the RDP algorithm to write its to do list.
+// XXX A number too small for RDP_STACK_LEN can cause a buffer overflow! The number to put here is int((s/2-1)+min(s/2, MAX_PATH_LEN-s)), where s = pow(2, floor(log(MAX_PATH_LEN)/log(2)))
+// To avoid this annoying math, a good-enough estimate is ciel(MAX_PATH_LEN*2./3.)
 
 // dot product is already defined using the * operator with Vector3f objects
 // cross product is %. length() also exists
@@ -78,11 +83,77 @@ float point_line_dist(Vector3f point, Vector3f line1, Vector3f line2){
   return 2*area/b
 }
 
-// TODO implement RDP. Probably best to write an iterative version, not recursive. That way, simplification can be performed in-place.
-void rdp(Vector3f *path, int last_index, float epsilon);
+struct start_finish
+{
+  uint8_t start;
+  uint8_t finish;
+};
+
+class RDP_Stack {
+    start_finish stack [MAX_PATH_LEN];
+    start_finish * top;
+  public:
+    void push(start_finish *item);
+    start_finish pop();
+}
+
+RDP_Stack::RDP_Stack(){
+  stack = {};
+  top = &stack;
+}
+
+RDP_Stack::push(start_finish *item) {
+  stack[++top] = *item;
+}
+
+RDP_Stack::pop() {
+  return stack[top--];
+}
+
+RDP_Stack::empty(){
+  return stack == top;
+}
+
+/**
+*   Returns the number of items which were removed.
+*/
+int rdp(Vector3f *path, int start_index, int end_index, float epsilon){
+  struct start_finish sf = {start_index, end_index};
+  stack.push(sf); // TODO initialize it somewhere
+  global_start = start;
+  // The bitmask which represents which points to keep (1) and which to delete(0)
+  std::bitset<end_index-start_index> bitmask (0x0);
+  bitmask.set();
+  while(!stack.empty()){
+    start_finish tmp = stack.pop();
+    start_index = tmp->start;
+    end_index = tmp->finish;
+
+    float max_dist = 0f;
+    int index = start_index;
+    for (int i = index + 1; i < end_index; i++){
+      if (bitmask[i-global_start]){
+          float dist = point_line_dist(path[i], path[start_index], path[end_index]);
+          if(dist > dist_max){
+            index = i;
+            max_dist = dist;
+          }
+      }
+    }
+
+    if (dmax > epsilon) {
+      stack.push(struct start_finish{start_index, index});
+      stack.push(struct start_finish{index, last_index});
+    } else {
+      for (int i = startIndex + 1; i < lastIndex; ++i) {
+        bitmask[i-global_start] = false;
+      }
+    }
+    // TODO now use std::move of memset or something to shift things arount, and return the number of items deleted.
+}
 
 class Path {
-    // points are stored in meters from EKF origin. TODO NED or XYZ?
+    // points are stored in meters from EKF origin in NED
     Vector3f path [MAX_PATH_LEN]; // TODO would a linked list be more appropriate? Definitely would be easier to prune points out.
     int last_index, worst_length;
   public:
