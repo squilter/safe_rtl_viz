@@ -222,7 +222,7 @@ class TestLineCalculations(unittest.TestCase):
         p2 = (1,1,0)
         p3 = (0,0,1)
         p4 = (1,1,1)
-        self.assertEqual((1, (0.0, 0.0, 0.5)), segment_segment_dist(p1,p2,p3,p4))
+        self.assertEqual((float('inf'), ([0, 0], [0, 0])), segment_segment_dist(p1,p2,p3,p4))
 
     def test_intersecting(self):
         p1 = (0,0,0)
@@ -234,15 +234,15 @@ class TestLineCalculations(unittest.TestCase):
     def test_identical(self):
         p1 = (0,0,0)
         p2 = (1,1,0)
-        self.assertEqual((0,(0,0,0)), segment_segment_dist(p1,p2,p1,p2))
-        self.assertEqual((0,(0,0,0)), segment_segment_dist(p1,p2,p2,p1))
+        self.assertEqual((float('inf'), ([0, 0], [0, 0])), segment_segment_dist(p1,p2,p1,p2))
+        self.assertEqual((float('inf'), ([0, 0], [0, 0])), segment_segment_dist(p1,p2,p2,p1))
 
     def test_parallel_but_spaced_out(self):
         p1 = (0,0,0)
         p2 = (1,0,0)
         p3 = (3,0,0)
         p4 = (4,0,0)
-        self.assertEqual((2, (1.0, 0.0, 0.0)), segment_segment_dist(p1,p2,p3,p4))
+        self.assertEqual((float('inf'), ([0, 0], [0, 0])), segment_segment_dist(p1,p2,p3,p4))
 
     def test_perpendicular_but_spaced_out(self):
         p1 = (-2,0,0)
@@ -260,6 +260,16 @@ class TestLineCalculations(unittest.TestCase):
         p = (-3,9,7)
         l = ((0,9,2),(5,9,8))
         self.assertAlmostEqual(5.5056, point_line_dist(p,l), delta=0.001)
+
+    def test_recursive_rdp(self):
+        inp = [(0,0,0), (1,4,6), (4,2,1), (4,2,2), (4,3,3), (5,3,3), (6,6,9)]
+        out = [(0, 0, 0), (1, 4, 6), (4, 2, 1), (6, 6, 9)]
+        self.assertEqual(out, rdp(inp, 1))
+
+    def test_iterative_rdp(self):
+        inp = [(0,0,0), (1,4,6), (4,2,1), (4,2,2), (4,3,3), (5,3,3), (6,6,9)]
+        out = [(0, 0, 0), (1, 4, 6), (4, 2, 1), (6, 6, 9)]
+        self.assertEqual(out, rdp_iter(inp, 1))
 
 if __name__ == "__main__":
     unittest.main()
