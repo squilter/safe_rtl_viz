@@ -33,7 +33,7 @@ struct dist_point
 *  Limitation: This function does not work for parallel lines. In this case, it will return FLT_MAX. This does not matter for the path cleanup algorithm because
 *  the pruning will still occur fine between the first parallel segment and a segment which is directly before or after the second segment.
 */
-dist_point segment_segment_dist(Vector3f p1, Vector3f p2, Vector3f p3, Vector3f p4){ // TODO maybe just pass through pointers. Same for next method
+dist_point segment_segment_dist(Vector3f p1, Vector3f p2, Vector3f p3, Vector3f p4) { // TODO maybe just pass through pointers. Same for next method
   Vector3f u = p2-p1;
   Vector3f v = p4-p3;
   Vector3f w = p1-p3;
@@ -72,22 +72,21 @@ dist_point segment_segment_dist(Vector3f p1, Vector3f p2, Vector3f p3, Vector3f 
 */
 float point_line_dist(Vector3f point, Vector3f line1, Vector3f line2){
   // triangle side lengths
-  float a = HYPOT(point, line1)
-  float b = HYPOT(line1, line2)
-  float c = HYPOT(line2, point)
+  float a = HYPOT(point, line1);
+  float b = HYPOT(line1, line2);
+  float c = HYPOT(line2, point);
 
   // semiperimeter of triangle
-  float s = (a+b+c)/2f
+  float s = (a+b+c)/2f;
 
-  area = sqrt(max(0f,s*(s-a)*(s-b)*(s-c))) //inner part must be constrained above 0 because a triangle where all 3 points could be on a line. float rounding could push this under 0.
-  return 2*area/b
+  area = sqrt(max(0f,s*(s-a)*(s-b)*(s-c))); //inner part must be constrained above 0 because a triangle where all 3 points could be on a line. float rounding could push this under 0.
+  return 2*area/b;
 }
 
-struct start_finish
-{
+typedef struct start_finish {
   uint8_t start;
   uint8_t finish;
-};
+} start_finish;
 
 class RDP_Stack {
     start_finish stack [MAX_PATH_LEN];
