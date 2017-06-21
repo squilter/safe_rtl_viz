@@ -69,7 +69,7 @@ def animate(i):
         return_path.append_if_far_enough( (x[i], y[i], z[i]) )
         return_path.routine_cleanup()
     except IndexError:
-        sys.exit(0)
+        pass # pause everything when it ends. Let the user choose when to end the program
     ax.clear()
 
     ## plot flown whole path
@@ -80,7 +80,10 @@ def animate(i):
     flyback_path = return_path.get_flyback_path()
     ax.plot_wireframe([k[0] for k in flyback_path], [k[1] for k in flyback_path], [k[2] for k in flyback_path], color='red')
     ## render copter
-    ax.scatter(x[i], y[i], z[i], c='r', marker = 'o')
+    try:
+        ax.scatter(x[i], y[i], z[i], c='r', marker = 'o')
+    except:
+        pass
     ## render memory usage
     global counter
     counter = counter+1
@@ -95,4 +98,7 @@ ax.set_ylabel('Y')
 ax.set_zlabel('alt')
 ani = animation.FuncAnimation(fig, animate, interval=10)
 # ani.save('vid.mp4', metadata={'artist':'squilter'}, fps = 10)
-plt.show()
+try:
+    plt.show()
+except AttributeError:
+    sys.exit(0)
