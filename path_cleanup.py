@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import copy
+import itertools
 import unittest
 from math import sin, sqrt
 
@@ -10,7 +11,7 @@ from bitarray import bitarray
 
 position_delta = 2. # how many meters to move before appending a new position to return_path
 pruning_delta = position_delta * 1.5 # how many meters apart must two points be, such that we can assume there is no obstacle between those points
-rdp_epsilon = position_delta * 1/2
+rdp_epsilon = position_delta * 0.5
 max_path_len = 100
 
 def dot_product(u, v):
@@ -116,11 +117,31 @@ def rdp_iter(path, epsilon, start = 0, end = None):
             for i in range(start+1, end):
                 bit_array[i - global_start_index] = False
 
+    return bit_array
+
+'''
+    Returns a list of tuples, each representing a detected loop. The tuple looks like (a,b,c), where a is the index of the first item to remove,
+    b-1 is the index of the last item to remove (b itself should stay), and c is the point (as a tuple) which represents the new point to be inserted in that place
+
+    TODO make sure that this never returns a loop that is contained wholly within another loop
+'''
+def detect_loops(path):
     ret = []
-    for i,b in enumerate(bit_array):
-        if b:
-            ret.append(path[global_start_index+i])
+    for i in range(1, len(path)-1):
+        # here we can choose: prune big/small loops starting in front/back?
+        # for j in range(i+2, len(self.path)-1): # count forwards. This prunes old, small loops first.
+        for j in range(len(path)-2, i+1,-1): # counts backwards. This prunes old, big loops first.
+            dist = segment_segment_dist(path[i], path[i+1], path[j], path[j+1])
+            if dist[0] <= pruning_delta:
+                # path = path[:i+1] + [dist[1]] + path[j+1:]
+                ret.append( (i+1, j+1, dist[1]) )
     return ret
+
+'''
+    Takes in a list and return the same list with all instances of 'item' removed
+'''
+def remove_matching(arr, item):
+    return [value for value in arr if value != item]
 
 '''
     Takes a path and runs 2 cleanup steps: pruning, then simplification.
@@ -155,13 +176,16 @@ class Path:
             self.path.append(p)
         # TODO maybe just move the most recent point if it was gonna make it in the same place anyways.
 
-    def get(self, i):
-        return self.path[i]
-
     '''
         Call this method regularly to clean up the path in memory.
     '''
     def routine_cleanup(self):
+        # TODO
+        # do the simplification if it will be effective, ie more than 10 deleted. in c++, do bitset.flip().count()
+        # if not, choose early loops - as many as are required to delete 10 points.
+        # maybe just try again next timestep when algorithms are done
+        # If neither gets more than 10, do both. If doing both removes fewer than 5 (and algorithms are done), give up.
+
         # We only do a routine cleanup if the memory is almost full. Cleanup deletes potentially useful points,
         # so it would be bad to clean up if we don't have to
         if len(self.path) > max_path_len - 2:
@@ -178,36 +202,14 @@ class Path:
         but it does not alter the path in memory.
     '''
     def get_flyback_path(self):
-        tmp = copy.deepcopy(self.path)
-
-        # run cleanup until it returns without having done any pruning
-        while self.__cleanup_pruning():
-            self.__cleanup_simplification()
-
         ret = copy.deepcopy(self.path)
-        # reset to original state
-        self.path = tmp
-
-        return ret
-
-    def __cleanup_pruning(self):
-        pruning_occured = False
-        for i in range(1, len(self.path)-1):
-            # here we can choose: prune big/small loops starting in front/back?
-            # for j in range(i+2, len(self.path)-1): # count forwards. This prunes old, small loops first.
-            for j in range(len(self.path)-2, i+1,-1): # counts backwards. This prunes old, big loops first.
-                dist = segment_segment_dist(self.path[i], self.path[i+1], self.path[j], self.path[j+1])
-                if dist[0] <= pruning_delta:
-                    self.path = self.path[:i+1] + [dist[1]] + self.path[j+1:]
-                    pruning_occured = True
-                    break
-            else: # break out of both for loops
-                continue
-            break
-        return pruning_occured
-
-    def __cleanup_simplification(self):
-        self.path = rdp(self.path, epsilon = rdp_epsilon)
+        loops = detect_loops(path)
+        simplification_bitmask = rdp(self.path, epsilon = rdp_epsilon)
+        # self.path = list(itertools.compress(self.path, simplification_bitmask))
+        # TODO clean this up all the way and return it
+        # first, all places where simplification_bitmask is zero should make that item 0.
+        # then zero everything between loops
+        # finally, put all the new in-between numbers where they belong.
 
 class TestLineCalculations(unittest.TestCase):
     def test_perpendicular(self):
