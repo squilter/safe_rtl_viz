@@ -93,6 +93,9 @@ def rdp(path, epsilon):
         path = [path[0], path[-1]]
     return path
 
+'''
+    TODO make this an anytime algorithm, where an input tells it how long to run this time before interrupting (and saving its state to continue later)
+'''
 def rdp_iter(path, epsilon, start = 0, end = None):
     if end is None:
         end = len(path)-1
@@ -123,16 +126,20 @@ def rdp_iter(path, epsilon, start = 0, end = None):
     Returns a list of tuples, each representing a detected loop. The tuple looks like (a,b,c), where a is the index of the first item to remove,
     b-1 is the index of the last item to remove (b itself should stay), and c is the point (as a tuple) which represents the new point to be inserted in that place
 
-    TODO make sure that this never returns a loop that is contained wholly within another loop
+    This method will never return a loop that is wholly contained within another loop
+
+    TODO make this an anytime algorithm, where an input tells it how long to run this time before interrupting (and saving its state to continue later)
 '''
 def detect_loops(path):
     ret = []
+    min_j = 0 # this is to prevent searching for loops that end before an existing loop, which prevents loops-within-loops.
     for i in range(1, len(path)-1):
         # here we can choose: prune big/small loops starting in front/back?
-        # for j in range(i+2, len(self.path)-1): # count forwards. This prunes old, small loops first.
-        for j in range(len(path)-2, i+1,-1): # counts backwards. This prunes old, big loops first.
+        # for j in range(len(path)-2, i+1,-1): # counts backwards. This prunes old, big loops first.
+        for j in range(max(min_j,i+2), len(path)-1): # count forwards. This prunes old, small loops first.
             dist = segment_segment_dist(path[i], path[i+1], path[j], path[j+1])
             if dist[0] <= pruning_delta:
+                min_j = j
                 # path = path[:i+1] + [dist[1]] + path[j+1:]
                 ret.append( (i+1, j+1, dist[1]) )
     return ret
@@ -174,28 +181,41 @@ class Path:
         x_old, y_old, z_old = self.path[-1]
         if (x-x_old)**2+(y-y_old)**2+(z-z_old)**2 >= position_delta**2:
             self.path.append(p)
-        # TODO maybe just move the most recent point if it was gonna make it in the same place anyways.
 
     '''
         Call this method regularly to clean up the path in memory.
     '''
     def routine_cleanup(self):
-        # TODO
-        # do the simplification if it will be effective, ie more than 10 deleted. in c++, do bitset.flip().count()
-        # if not, choose early loops - as many as are required to delete 10 points.
-        # maybe just try again next timestep when algorithms are done
-        # If neither gets more than 10, do both. If doing both removes fewer than 5 (and algorithms are done), give up.
+        if len(self.path) < max_path_len - 10:
+            return
+        simplification_bitmask = rdp_iter(self.path, epsilon = rdp_epsilon)
+        loops = detect_loops(self.path)
+        potential_amount_to_simplify = len(simplification_bitmask) - simplification_bitmask.count()
 
-        # We only do a routine cleanup if the memory is almost full. Cleanup deletes potentially useful points,
-        # so it would be bad to clean up if we don't have to
-        if len(self.path) > max_path_len - 2:
-            self.__cleanup_simplification()
-            # if that didn't do anything, try pruning
-            if len(self.path) > max_path_len - 2:
-                self.__cleanup_pruning()
-                # if it still didn't work
-                if len(self.path) > max_path_len - 2:
-                    raise Exception("Out of Memory. Safe RTL unavailabe.")
+        prune_size_dict = {}
+        ignored_points = 0 # this is the number of points that are going to get added back
+        for (a,b,c) in loops:
+            for i in range(a,b):
+                prune_size_dict[i] = None
+            ignored_points += 1
+        potential_amount_to_prune = len(prune_size_dict.keys()) - ignored_points
+
+        if potential_amount_to_simplify > 10: # if applying simplification would remove 10+ points
+            # just run simplification
+            self.path = list(itertools.compress(self.path, simplification_bitmask))
+        elif potential_amount_to_prune:
+            pruned_points = 0
+            while pruned_points < 10:
+                loop = loops.pop(0) # start pruning loops from the beginning
+                for i in range(loop[0], loop[1]):
+                    self.path[i] = None
+                pruned_points += loop[1] - loop[0] - 1
+        elif potential_amount_to_simplify + potential_amount_to_prune > 5:
+            self.path = get_flyback_path()
+        else: # can't clean up any more
+            raise Exception("Out of Memory. Safe RTL unavailabe.")
+
+        self.path = remove_matching(self.path, None)
 
     '''
         Hypothetically, if the copter were to fly back now, what path would it fly? This runs an aggressive cleanup and returns a path,
@@ -203,13 +223,22 @@ class Path:
     '''
     def get_flyback_path(self):
         ret = copy.deepcopy(self.path)
-        loops = detect_loops(path)
-        simplification_bitmask = rdp(self.path, epsilon = rdp_epsilon)
-        # self.path = list(itertools.compress(self.path, simplification_bitmask))
-        # TODO clean this up all the way and return it
-        # first, all places where simplification_bitmask is zero should make that item 0.
-        # then zero everything between loops
+        loops = detect_loops(ret)
+        simplification_bitmask = rdp_iter(ret, epsilon = rdp_epsilon)
+
+        # flag points for simplification removal
+        for i in range(len(ret)):
+            if not simplification_bitmask[i]:
+                ret[i] = None
+        # flag points for pruning removal
+        for a,b,_ in loops:
+            for i in range(a,b):
+                ret[i] = None
         # finally, put all the new in-between numbers where they belong.
+        for a,b,c in loops:
+            ret[int((a+b)/2.)] = c
+
+        return remove_matching(ret, None) # remove all null-valued points before returning
 
 class TestLineCalculations(unittest.TestCase):
     def test_perpendicular(self):
