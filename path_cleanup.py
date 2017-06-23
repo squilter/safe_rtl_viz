@@ -76,23 +76,6 @@ def point_line_dist(point, line):
 
     return 2*area/b
 
-def rdp(path, epsilon):
-    max_index = -1
-    max_dist = 0
-
-    for i in range(1, len(path)-1):
-        dist = point_line_dist( path[i], (path[0],path[-1]) )
-        if dist > max_dist:
-            max_index = i
-            max_dist = dist
-    if max_dist > epsilon:
-        l1 = rdp(path[:max_index+1], epsilon)
-        l2 = rdp(path[max_index:], epsilon)
-        path = l1[:-1] + l2
-    else:
-        path = [path[0], path[-1]]
-    return path
-
 '''
     TODO make this an anytime algorithm, where an input tells it how long to run this time before interrupting (and saving its state to continue later)
 '''
