@@ -2,6 +2,7 @@
 
 import copy
 import itertools
+import time
 import unittest
 from math import sin, sqrt
 
@@ -106,17 +107,23 @@ def rdp_iter(path, epsilon, start = 0, end = None):
     return bit_array
 
 '''
-    Returns a list of tuples, each representing a detected loop. The tuple looks like (a,b,c), where a is the index of the first item to remove,
+    Saves a list of tuples to memory, each representing a detected loop. The tuple looks like (a,b,c), where a is the index of the first item to remove,
     b-1 is the index of the last item to remove (b itself should stay), and c is the point (as a tuple) which represents the new point to be inserted in that place
 
-    This method will never return a loop that is wholly contained within another loop
+    This method will never detect a loop that is wholly contained within another loop
 
-    TODO make this an anytime algorithm, where an input tells it how long to run this time before interrupting (and saving its state to continue later)
+    This method takes as input: 1. an index which tells the algorithm where to continue searching from, and 2. how much time it can search before it must return (in ms)
+
+    This method returns the index of where the algorithm left off. If a -1 is returned, the algorithm has run to completion.
 '''
-def detect_loops(path):
-    ret = []
-    min_j = 0 # this is to prevent searching for loops that end before an existing loop, which prevents loops-within-loops.
-    for i in range(1, len(path)-1):
+detected_loops = []
+def detect_loops(path, resume_state, allowed_time):
+    global detected_loops
+    start_time = time.clock()
+    min_j = resume_state[1] # this is to prevent searching for loops that end before an existing loop, which prevents loops-within-loops.
+    for i in range(resume_state[0] or 1, len(path)-1): # we will start at the specified index. If None or 0 is specified, it will start at 1.
+        if time.clock()-start_time > allowed_time/1000.:
+            return (i, min_j)
         # here we can choose: prune big/small loops starting in front/back?
         # for j in range(len(path)-2, i+1,-1): # counts backwards. This prunes old, big loops first.
         for j in range(max(min_j,i+2), len(path)-1): # count forwards. This prunes old, small loops first.
@@ -124,8 +131,8 @@ def detect_loops(path):
             if dist[0] <= pruning_delta:
                 min_j = j
                 # path = path[:i+1] + [dist[1]] + path[j+1:]
-                ret.append( (i+1, j+1, dist[1]) )
-    return ret
+                detected_loops.append( (i+1, j+1, dist[1]) )
+    return (-1, 0)
 
 '''
     Takes in a list and return the same list with all instances of 'item' removed
@@ -171,9 +178,15 @@ class Path:
     def routine_cleanup(self):
         if len(self.path) < max_path_len - 10:
             return
-        simplification_bitmask = rdp_iter(self.path, epsilon = rdp_epsilon)
-        loops = detect_loops(self.path)
-        potential_amount_to_simplify = len(simplification_bitmask) - simplification_bitmask.count()
+
+        # detect loops
+        global detected_loops
+        detected_loops = []
+        loop_algorithm_state = (0,0) # stores how far along the loop-finding algorithm has searched
+        while loop_algorithm_state[0] != -1:
+            # allow this algorithm 0.5ms to run, and then run it repeatedly until it reports that it has completed
+            loop_algorithm_state = detect_loops(self.path, (loop_algorithm_state), 0.5)
+        loops = copy.deepcopy(detected_loops)
 
         prune_size_dict = {}
         ignored_points = 0 # this is the number of points that are going to get added back
@@ -182,6 +195,11 @@ class Path:
                 prune_size_dict[i] = None
             ignored_points += 1
         potential_amount_to_prune = len(prune_size_dict.keys()) - ignored_points
+
+        # simplify
+        simplification_bitmask = rdp_iter(self.path, epsilon = rdp_epsilon)
+        potential_amount_to_simplify = len(simplification_bitmask) - simplification_bitmask.count()
+
 
         if potential_amount_to_simplify > 10: # if applying simplification would remove 10+ points
             # just run simplification
@@ -206,7 +224,17 @@ class Path:
     '''
     def get_flyback_path(self):
         ret = copy.deepcopy(self.path)
-        loops = detect_loops(ret)
+
+        # detect loops
+        global detected_loops
+        detected_loops = []
+        loop_algorithm_state = (0,0) # stores how far along the loop-finding algorithm has searched
+        while loop_algorithm_state[0] != -1:
+            # allow this algorithm 500ms to run, and then run it repeatedly until it reports that it has completed
+            loop_algorithm_state = detect_loops(ret, loop_algorithm_state, 0.5)
+        loops = copy.deepcopy(detected_loops)
+
+        # simplify
         simplification_bitmask = rdp_iter(ret, epsilon = rdp_epsilon)
 
         # flag points for simplification removal
