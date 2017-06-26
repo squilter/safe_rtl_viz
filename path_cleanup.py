@@ -78,33 +78,49 @@ def point_line_dist(point, line):
     return 2*area/b
 
 '''
-    TODO make this an anytime algorithm, where an input tells it how long to run this time before interrupting (and saving its state to continue later)
+    This is a simplification algorithm, which generates a bitmask that says which points to keep (1) and which to delete (0).
+    For details on how it works, see the wikipedia article on the Ramer-Douglas-Peucker algorithm.
+
+    The epsilon value defines how aggressive the simplification is.
+
+    The allowed_time defines how long the algorithm will run before returning, in ms.
+
+    This method returns True if the algorithm has run to completion (and the bitmask is optimal), and False otherwise.
+    If this method returns false, running it again will likely produce a bitmask with more False values. That said, it is
+    an anytime algorithm, which never returns something incorrect. It is always possible to use the bitmask to simplify
+    the path.
 '''
-def rdp_iter(path, epsilon, start = 0, end = None):
-    if end is None:
+stk, bitmask = None, None
+def rdp_iter(path, epsilon, allowed_time):
+    global stk, bitmask
+    if stk is None and bitmask is None:
+        # reset state to starting state
+        stk = []
         end = len(path)-1
-    stk = []
-    stk.append( (start, end) )
-    global_start_index = start
-    bit_array = bitarray([True]*(end-start+1))
-    while(stk):
+        bitmask = bitarray([True]*(end+1))
+        stk.append( (0, end) )
+
+    start_time = time.clock()
+    while stk:
+        if (time.clock()-start_time > allowed_time/1000.):
+            return False
         start, end = stk.pop()
         max_dist = 0.
-        index = start
-        for i in range(index+1, end):
-            if bit_array[i-global_start_index]:
+        max_index = start
+        for i in range(max_index+1, end):
+            if bitmask[i]:
                 dist = point_line_dist(path[i], (path[start], path[end]))
                 if dist > max_dist:
-                    index = i
+                    max_index = i
                     max_dist = dist
         if max_dist > epsilon:
-            stk.append( (start, index) )
-            stk.append( (index, end) )
+            stk.append( (start, max_index) )
+            stk.append( (max_index, end) )
         else:
             for i in range(start+1, end):
-                bit_array[i - global_start_index] = False
+                bitmask[i] = False
 
-    return bit_array
+    return True
 
 '''
     Saves a list of tuples to memory, each representing a detected loop. The tuple looks like (a,b,c), where a is the index of the first item to remove,
@@ -197,7 +213,12 @@ class Path:
         potential_amount_to_prune = len(prune_size_dict.keys()) - ignored_points
 
         # simplify
-        simplification_bitmask = rdp_iter(self.path, epsilon = rdp_epsilon)
+        global stk, bitmask
+        stk = None
+        bitmask = None
+        while not rdp_iter(self.path, rdp_epsilon, 0.5):
+            pass
+        simplification_bitmask = bitmask
         potential_amount_to_simplify = len(simplification_bitmask) - simplification_bitmask.count()
 
 
@@ -235,7 +256,13 @@ class Path:
         loops = copy.deepcopy(detected_loops)
 
         # simplify
-        simplification_bitmask = rdp_iter(ret, epsilon = rdp_epsilon)
+        global stk, bitmask
+        stk = None
+        bitmask = None
+        while not rdp_iter(self.path, rdp_epsilon, 0.5):
+            pass
+        simplification_bitmask = bitmask
+        potential_amount_to_simplify = len(simplification_bitmask) - simplification_bitmask.count()
 
         # flag points for simplification removal
         for i in range(len(ret)):
